@@ -113,19 +113,19 @@ void loop() {
     const char* label = "LEVEL - BALANCED";
     uint32_t arrowColor = COLOR_GREEN;
 
-    if (ay > 0.30) {
+    if (ay < -0.30) {
         direction = 1;
         label = "TILT: FORWARD";
         arrowColor = COLOR_BLUE;
-    } else if (ay < -0.30) {
+    } else if (ay > 0.30) {
         direction = 2;
         label = "TILT: BACKWARD";
         arrowColor = COLOR_BLUE;
-    } else if (ax > 0.30) {
+    } else if (ax < -0.30) {
         direction = 3;
         label = "TILT: LEFT";
         arrowColor = COLOR_BLUE;
-    } else if (ax < -0.30) {
+    } else if (ax > 0.30) {
         direction = 4;
         label = "TILT: RIGHT";
         arrowColor = COLOR_BLUE;
