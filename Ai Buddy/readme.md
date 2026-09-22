@@ -1,312 +1,867 @@
-**The Adorable AI Bunny That Talks, Listens, and Teaches!**
-AI Bunny is a charming, educational, and deeply interactive companion. Housed in a 3D-printed bunny-faced enclosure, this delightful device isn't just cute, it listens, speaks, responds, and teaches. Whether it's practicing language skills, telling stories, playing educational games, or answering curious questions, AI Bunny is a DIY marvel that brings edge AI to life in a way kids (and grownups) can actually engage with.
+# 🐰 AI Buddy: Portable Open-Source AI Companion
 
-In today's world, kids as young as 2-4 years old are increasingly exposed to mobile phones and tablets, often leading to:
-- Reduced attention span
-- Increased screen dependency
-- Overstimulation and delayed speech development
+> What if your child had a friendly AI companion they could talk to, learn with, and customize themselves?
 
-AI Bunny offers voice-driven learning experience that encourages active participation instead of passive scrolling. It's playful, educational, and distraction-free, designed to spark curiosity without digital overload.
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/Cover.png)
 
-**Powered by UNIHIKER K10 – An All-in-One AI Dev Board**
-At the heart of AI Bunny is the UNIHIKER K10, a compact, all-in-one development board built on the powerful ESP32-S3. Why UNIHIKER? Because it's a dream for makers, combining:
+Meet AI Buddy, an open-source AI chatbot built around the DFRobot UNIHIKER K10 and the Xiaozhi Framework. It combines conversational AI with adorable, pocket-sized animal designs to create a fun and interactive learning companion for kids.
 
-- 2.8” screen
-- Built-in microphone
-- Onboard speaker
-- Camera module
-- Temperature, humidity, and light sensors
-- 3-axis accelerometer
-- 2 programmable buttons
-- Wi-Fi and Bluetooth support
+Unlike commercial AI toys, AI Buddy is completely DIY and customizable. From the enclosure to the software, everything is designed to be modified, expanded, and personalized. Whether you want a bunny, cat, giraffe, or your own custom character, you can simply swap the enclosure while using the same electronics inside.
 
-All of this in a plug-and-play package, no breadboards, no tangled jumper wires. Just focused, functional, creative prototyping.
+For this improved version, I redesigned almost every part of the project:
 
-**Fully Portable and Rechargeable**
+* 🐰 Brand-new interchangeable animal enclosures designed in Fusion 360
+* 🔋 Custom Battery Management System (BMS) for safe charging and longer battery life
+* 🤖 Powered by the DFRobot UNIHIKER K10
+* 💬 Runs the Xiaozhi AI Framework for natural voice conversations
+* 🎨 Cute animated facial expressions displayed on the built-in screen
+* 🔊 Built-in microphone and speaker for hands-free interaction
+* 🛠️ Fully open-source hardware and software
+* 🌈 Multiple character designs with the same core electronics
+Whether you're a maker, parent, educator, or simply someone who enjoys building interactive gadgets, AI Buddy is a rewarding project that combines 3D printing, electronics, embedded programming, PCB design, and AI into a single build.
 
-AI Bunny includes a Lithium-Ion battery, securely mounted inside the case and wired through a power switch. Best of all, it charges directly via the UNIHIKER's USB Type-C port, so no need to remove the battery or open the case. Plug it in, and it charges while you build or code!
+In this Instructable, I'll guide you through designing the enclosure, assembling the electronics, building the custom battery management system, programming the UNIHIKER K10, and bringing your own AI Buddy to life.
 
-**Built with Xiaozhi + DeepSeek, Real AI on the Edge**
-By leveraging the open-source xiaozhi-esp32 project, we've enabled localized AI voice chat right on the ESP32-S3. With support for models like DeepSeek, AI Bunny can:
-- Recognize your voice
-- Understand and reply using large language models
-- Translate between languages
-- Hold multi-turn conversations just like a smart assistant
+Let's get started! 🚀
 
-All of this happens with low latency and high reliability, especially impressive given the device's size and cost.
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/IMG2.JPG)
 
-**Image Recognition (Experimental)**
-AI Bunny also supports capturing images using the onboard camera. While Xiaozhi currently faces upload limits due to server load, the system is designed so that once an image is captured and successfully uploaded, the language model can analyze and describe whatever is in the picture. This opens the door for vision-based interaction, object recognition, and future accessibility features.
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/IMG3.JPG)
 
-**Why AI Bunny?**
-Whether you're:
-* Building an educational voice assistant for your child
-* Prototyping your own AI-powered project
-* Exploring AI at the edge with practical real-world sensors
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image53.jpg)
 
-AI Bunny proves that playful design and serious tech can go hand-in-paw.
-Let's build an AI Bunny that listens, learns, and speaks back, all from the palm of your hand.
+# Supplies
 
-![Image 2](https://content.instructables.com/FBB/29B0/MDG8PTQF/FBB29B0MDG8PTQF.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMyAyMzoyOTo0OS4w)![Image 3](https://content.instructables.com/F9V/581H/MDG8PTSN/F9V581HMDG8PTSN.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMyAyMzoyOTo1OC4w&_gl=1*1y7pert*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg4NTI2JGo0OCRsMCRoMA..)![Image 4](https://content.instructables.com/FA9/A0LV/MDG8PTUP/FA9A0LVMDG8PTUP.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMyAyMzozMDowNy4w)
+![Supplies Overview](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image33.jpg)
 
-## Supplies
+Below are the supplies needed to build your own AI Buddy. You can find the 3D design files in the [CAD/](file:///c:/Users/MAKERBRAINS/Downloads/AI-Buddy/CAD) directory and the PCB schematics and production files in the [PCB_Files/](file:///c:/Users/MAKERBRAINS/Downloads/AI-Buddy/PCB_Files) directory.
 
-![Image 5](https://content.instructables.com/FJF/SZ7M/MCW9YIHG/FJFSZ7MMCW9YIHG.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjoyOTo1My4w&_gl=1*11d4fa5*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)
+### Electronics
+* 1× [DFRobot UNIHIKER K10](https://www.dfrobot.com/product-2691.html)
+* 1× [Custom BMS PCB](file:///c:/Users/MAKERBRAINS/Downloads/AI-Buddy/PCB_Files)
+* 1× [3.7V Li-Po Battery](https://www.dfrobot.com)
+* 1× [M2 Screw Kit](https://www.dfrobot.com)
 
-**Hardware List:**
+### Tools
+* 1× [3D Printer](file:///c:/Users/MAKERBRAINS/Downloads/AI-Buddy/CAD)
+* 1× [Precision Screwdriver Kit](https://www.dfrobot.com)
 
-* 1x  [Unihiker K10](https://www.dfrobot.com/product-2904.html?tracking=wilKriekbs7BI3GBJZ9IVhugyxsApTR05uQK9f1Br0N3xrQ5uLs2gnzzEIaGP7Qm)
-* 1x [Li-Po Battery](https://techiesms.com/product/2500mah-3-7v-li-po-battery/)
-* 1x [Push Switch](https://a.co/d/3N8GISH)
-* 7x [M2 8mm Screw](https://jlcmc.com/product/s/E02/EDDV/ws-9200-hex-socket-cap-head-self-tapping-screw)
 
-**Tools:**
-* [My 3D Printer](https://us.store.bambulab.com/products/p1s?variant=42153262743688)
-* [My Screwdriver Kit](https://amzn.to/3EwfkSn)
-* [My Soldering Station](https://amzn.to/42tspUg)
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image38.jpg)
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/PCBA1.JPG)
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image43.jpg)
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image35.jpg)
+  
+# Meet the DFRobot UNIHIKER K10
 
-![](https://content.instructables.com/FKY/TKVX/MCW9YIIL/FKYTKVXMCW9YIIL.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozMDo1My4w&_gl=1*1waemsy*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)
-![](https://content.instructables.com/FCT/D2SU/MCW9YIIC/FCTD2SUMCW9YIIC.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozMDo0My4w)
-![](https://content.instructables.com/FVH/M52M/MCW9YIHR/FVHM52MMCW9YIHR.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozMDoxNC4w)
-![](https://content.instructables.com/FIK/KZOD/MCW9YIHX/FIKKZODMCW9YIHX.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozMDoyMy4w)
-![](https://content.instructables.com/F55/HF7A/MCW9YII4/F55HF7AMCW9YII4.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozMDozMi4w)
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/IMG4.JPG)
 
-## STEP 1: CAD Design & 3D Printing the Bunny Enclosure
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image61.png)
 
-![Image 6](https://dfimg.dfrobot.com/5eef6b86c913a99430e3e61d/community/a2cd94044292ca61d607274293539d5b.gif)
-To bring AI Bunny to life, I designed a custom bunny-shaped enclosure using Fusion 360. The goal was to create a functional yet fun housing for the UNIHIKER K10, keeping it secure while giving it a playful personality.
+At the heart of AI Buddy is the DFRobot UNIHIKER K10, an ESP32-S3-powered development board packed with everything needed to build an interactive AI companion.
 
-**Design Process**
-* I began by importing the official UNIHIKER K10 CAD model into Fusion 360.
-* Then, I modeled the enclosure around it, adding precise cutouts for:
-* The power switch
-* The screen
-* Airflow and the speaker outlet
-* A rear camera window
+Unlike traditional ESP32 boards, the UNIHIKER K10 already includes a display, camera, microphone, speaker, sensors, buttons, RGB LEDs, and battery connector—all integrated into a compact form factor. This significantly reduces wiring and makes it an ideal platform for portable AI projects.
 
-**The enclosure is made up of 4 modular components:**
--   [Main Housing](https://content.instructables.com/FM8/5FIS/MCW9YKKM/FM85FISMCW9YKKM.stl?_gl=1*nyhorz*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTMzMzY5NTkkbzIyJGcxJHQxNzUzMzM5NTE4JGo1NiRsMCRoMA..) - Holds the UNIHIKER K10 securely and has cutouts for the screen, airflow, and speaker output
--   [Middle Plate](https://content.instructables.com/FU5/N4ML/MCW9YKHD/FU5N4MLMCW9YKHD.stl?_gl=1*nyhorz*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTMzMzY5NTkkbzIyJGcxJHQxNzUzMzM5NTE4JGo1NiRsMCRoMA..) - Supports and secures the board and power switch in position
--   [Push Button Extensions](https://content.instructables.com/FPO/I291/MCW9YKJI/FPOI291MCW9YKJI.stl?_gl=1*nyhorz*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTMzMzY5NTkkbzIyJGcxJHQxNzUzMzM5NTE4JGo1NiRsMCRoMA..) (x2) - Designed to align with the K10’s two programmable buttons, provide tactile interaction through the case
--   [Back Cover](https://content.instructables.com/FZY/H7YN/MCW9YKIF/FZYH7YNMCW9YKIF.stl?_gl=1*nyhorz*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTMzMzY5NTkkbzIyJGcxJHQxNzUzMzM5NTE4JGo1NiRsMCRoMA..) - Seals the enclosure and features an opening for the rear camera module.
+Key Features
 
-**Printing Instructions**
-You can download the STL files directly and start printing or open the STEP file in Fusion 360 if you'd like to customize the design to suit your needs.
-* I printed my enclosure using a Bambu Lab P1S with yellow PLA filament.
+* **ESP32-S3 (Dual-Core Xtensa LX7 @ 240 MHz)**
+* **16 MB Flash**
+* **8 MB PSRAM**
+* **2.8" 240 × 320 Color LCD**
+* **2 MP Camera**
+* **Dual MEMS Microphones**
+* **2W Speaker**
+* **Wi-Fi (2.4 GHz)**
+* **Bluetooth 5.0**
+* **Temperature & Humidity Sensor**
+* **Ambient Light Sensor**
+* **3-Axis Accelerometer**
+* **3× WS2812 RGB LEDs**
+* **MicroSD Card Slot**
+* **USB Type-C Programming Interface**
+* **Dedicated Li-Po Battery Connector (3.0–6.0 V)**
+All these features make the UNIHIKER K10 a perfect choice for an AI chatbot capable of voice interaction, expressive animations, and future expansion.
 
-#### [**Bloom Buddy Fusion 360 File**](https://a360.co/3TPYF0d)
+Why I Chose the UNIHIKER K10
 
-![Image 7](https://content.instructables.com/F5I/FCLG/MCW9YIJN/F5IFCLGMCW9YIJN.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozMjoxNi4w&_gl=1*55v9oj*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)![Image 8](https://content.instructables.com/FK5/EB7G/MCW9YILL/FK5EB7GMCW9YILL.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozMjo1OS4w)![Image 9](https://content.instructables.com/FSZ/FU1M/MCW9YIJZ/FSZFU1MMCW9YIJZ.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozMjoyNy4w)![Image 10](https://content.instructables.com/FC1/N99L/MCW9YIKC/FC1N99LMCW9YIKC.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozMjozNS4w)![Image 11](https://content.instructables.com/FBG/A0DE/MCW9YIKQ/FBGA0DEMCW9YIKQ.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozMjo0My4w)![Image 12](https://content.instructables.com/FTP/OMD7/MCW9YIL5/FTPOMD7MCW9YIL5.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozMjo1MS4w)
+For AI Buddy, I wanted a board that could handle voice conversations while remaining compact and beginner-friendly. The UNIHIKER K10 already provides:
 
-## STEP 2: Housing Assembly
-
-![Image 13](https://content.instructables.com/FMI/4UAD/MCW9YIML/FMI4UADMCW9YIML.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozNDoxOC4w&_gl=1*1t0lops*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)![Image 14](https://content.instructables.com/F5I/1K4J/MCW9YIN5/F5I1K4JMCW9YIN5.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozNDoyOC4w)![Image 15](https://content.instructables.com/FGY/ZY7E/MCW9YINQ/FGYZY7EMCW9YINQ.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozNDozNi4w)Now that the parts are printed, it's time to assemble the AI Bunny's main housing.
-
-**What You will Need:**
-* Main Housing (3D printed)
-* 2x Push Button Extensions
-* UNIHIKER K10 Board
+* 🎤 Dual microphones for voice input
+* 🔊 Built-in speaker for AI responses
+* 🖥️ Color display for animated expressions
+* 📷 Camera for future AI vision features
+* 📶 Wi-Fi for connecting to AI services
+* 🔋 Battery connector for portable operation
+This allowed me to focus on designing the enclosure and user experience instead of building complex hardware from scratch.
 
-**Insert the Button Extensions**
-* Place the two identical push button extensions into their respective slots inside the housing.
-* Make sure they move freely, if they feel tight or get stuck, use a bit of fine-grit sandpaper to smooth the edges until they can click/toggle with ease.
+### ⚠️ One Limitation
 
-**Mount the UNIHIKER K10**
-* Gently slide the UNIHIKER K10 into the housing, aligning - USB Type-C port with the corresponding cutout, and board’s physical buttons with the button extensions.
+> [!WARNING]
+> The UNIHIKER K10 includes a 2-pin Li-Po battery connector, making it easy to power the board from a rechargeable battery.
+> 
+> However, it does not include an onboard battery charging or battery protection circuit. This means the battery cannot be safely charged through the board itself, nor does it provide overcharge, over-discharge, or short-circuit protection.
 
-![Image 16](https://content.instructables.com/F56/NYI8/MCW9YIOC/F56NYI8MCW9YIOC.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozNDo0NC4w)![Image 17](https://content.instructables.com/FPD/W6TV/MCW9YIOZ/FPDW6TVMCW9YIOZ.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozNDo1Mi4w)![Image 18](https://content.instructables.com/FSP/TD9U/MCW9YIPN/FSPTD9UMCW9YIPN.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozNTowMS4w)
-Test buttons press responsiveness now, before closing the enclosure.
-
-## STEP 3: Power Connection & Switch Integration
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/AI_Buddy_PCB.png)
 
-![Image 19](https://content.instructables.com/FEO/OWXR/MDFMKDW7/FEOOWXRMDFMKDW7.png?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMyAwNzozMDo1My4w&_gl=1*1t0lops*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)
-To safely power your AI Bunny and control it with the external switch, we'll modify the battery connection using a simple inline cut-and-solder method.
-
-**What You will Need:**
-* LiPo Battery with JST connector
-* Wire cutters/stripper
-* Push Switch
-* Soldering iron + solder
-
-**Steps to Add the Power Switch:**
-* Identify the Red Wire (Positive Line)
-* Gently bend the switch terminals so they point upward and toward the back, making it easier to fit inside the enclosure and plate.
-* Identify the red wire between the battery and the JST connector (the positive line).
-* Carefully cut this wire in the middle.
-* Solder the battery end of the red wire to one terminal of the switch.
-* Solder the JST connector end of the red wire to the other terminal.
-* This places the switch in series, so it can control the power flow from the battery to the UNIHIKER.
-
-![Image 20](https://content.instructables.com/F95/OF1R/MCW9YIQC/F95OF1RMCW9YIQC.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozNTo1NC4w&_gl=1*16zafgv*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)![Image 21](https://content.instructables.com/F00/QUBZ/MCW9YIR5/F00QUBZMCW9YIR5.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozNjowMi4w)![Image 22](https://content.instructables.com/F9X/SJ7N/MCW9YIRY/F9XSJ7NMCW9YIRY.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozNjoxMC4w)
-
-## STEP 4: Power Assembly
-
-**What You will Need:**
-* Assembled housing
-* Battery with wired switch
-* Middle plate
-* 3x M2 screws (8mm length)
-* Double-sided tape
-
-**Assembly Instructions:**
-* Stick a piece of double-sided tape to the back of the battery and firmly press the battery onto the middle plate.
-* Carefully route the JST connector wire through the cutout in the plate and plug the JST connector into the UNIHIKER's battery port.
-* Align the power switch with the cutout in the housing and press it.
-* Gently place the middle plate into the housing, ensuring everything fits snugly.
-* Use 3x M2 8mm screws to secure the plate in place.
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/PCBDesign.png)
 
-![Image 23](https://content.instructables.com/FXG/36FC/MCW9YISS/FXG36FCMCW9YISS.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozNzo0MC4w&_gl=1*3477su*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)![Image 24](https://content.instructables.com/FQX/F4V9/MCW9YITP/FQXF4V9MCW9YITP.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozNzo1MC4w)![Image 25](https://content.instructables.com/FAV/VVWH/MCW9YIUN/FAVVVWHMCW9YIUN.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozNzo1OS4w)![Image 26](https://content.instructables.com/FYD/55FO/MCW9YIWM/FYD55FOMCW9YIWM.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozODoxOC4w)![Image 27](https://content.instructables.com/FXP/XVHA/MCW9YIVM/FXPXVHAMCW9YIVM.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozODoxMC4w)![Image 28](https://content.instructables.com/FJM/HYVB/MCW9YIXN/FJMHYVBMCW9YIXN.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozODoyNi4w)![Image 29](https://content.instructables.com/F25/KTHT/MCW9YIYP/F25KTHTMCW9YIYP.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozODozNC4w)![Image 30](https://content.instructables.com/FDM/JXCN/MCW9YJ0W/FDMJXCNMCW9YJ0W.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozODo1My4w)![Image 31](https://content.instructables.com/F9N/06VH/MCW9YIZS/F9N06VHMCW9YIZS.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjozODo0My4w)
-
-## STEP 5: Cover Assembly
-You are almost done! Let's finish assembling the enclosure by attaching the back cover.
-**What You will Need:**
-* Fully assembled housing (with UNIHIKER, plate, and battery)
-* Back cover
-* 4x M2 screws (8mm length)
+Although the DFRobot UNIHIKER K10 includes a dedicated Li-Po battery connector, it does not provide onboard battery charging or battery protection. To make AI Buddy truly portable and easy to recharge, I designed a compact Battery Management System (BMS) that fits neatly inside the enclosure.
 
-**Assembly Instructions:**
-* Take the back cover and align it with the housing, making sure the camera hole lines up with the UNIHIKER's rear camera module.
-* Gently snap the cover onto the housing. Ensure all edges sit flush.
-* Use 4x M2 8mm screws to firmly secure the cover in place.
+The PCB is based on the IP5306 Power Management IC, which provides safe battery charging and power management for single-cell Li-Po batteries.
 
-That's it! Your AI Bunny enclosure is now fully assembled and ready for action.
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image52.png)
 
-![Image 32](https://content.instructables.com/FCZ/6MRV/MCW9YJ4A/FCZ6MRVMCW9YJ4A.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjo0MDoxNS4w&_gl=1*ya82hd*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)![Image 33](https://content.instructables.com/FPV/7Y7Y/MCW9YJ5I/FPV7Y7YMCW9YJ5I.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjo0MDo0Ny4w)![Image 34](https://content.instructables.com/FRK/9HFT/MCW9YJ6R/FRK9HFTMCW9YJ6R.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjo0MDo1Ny4w)![Image 35](https://content.instructables.com/FZU/O5CQ/MCW9YJ81/FZUO5CQMCW9YJ81.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMiAyMjo0MTowNi4w)![Image 36](https://content.instructables.com/FTC/EXU9/MDG8PU1U/FTCEXU9MDG8PU1U.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMyAyMzozMTozNS4w)
-
-## STEP 6: Flash the "Xiaozhi" Firmware Onto UNIHIKER K10
+### Custom BMS Features
+* 🔋 **USB Type-C Li-Po Battery Charging**: Safe and fast charging of a single-cell Li-Po battery.
+* ⚡ **IP5306 Power Management IC**: Integrated power path management, highly efficient boost conversion, and battery fuel gauge.
+* 🛡️ **Full Battery Protection**: Overcharge, over-discharge, overcurrent, and short-circuit protection.
+* 🔘 **On-board Power Button**: For powering the device on and off cleanly.
+* 🔌 **2 × JST-PH 2-Pin Connectors**:
+  * **Battery Input**: Connects to the 3.7V battery.
+  * **Power Output**: Connects to the UNIHIKER K10 power connector.
+* 📏 **Compact Outline**: Custom-designed to fit perfectly inside the AI Buddy enclosure.
+The dual JST connectors make the wiring extremely simple. Just connect the battery to the Battery IN connector and the UNIHIKER K10 to the Battery OUT connector—no additional wiring or soldering is required during final assembly.
 
-![Image 37](https://content.instructables.com/FWV/1DRR/MDFMJX9J/FWV1DRRMDFMJX9J.png?auto=webp&frame=1&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyMzoyOS4w&_gl=1*1cuasw8*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)Now that your AI Bunny is physically assembled, it's time to give it a brain! We'll flash the xiaozhi firmware to enable voice chat and smart interactions.
-* Plug the UNIHIKER K10 into your PC using a USB Type-C cable.
-* Download the latest [ESP Flash Download Tool](https://dl.espressif.com/public/flash_download_tool.zip) from the Espressif website.
-* Get the compiled English xiaozhi firmware .bin file from [the AI Bunny GitHub repo](https://github.com/MukeshSankhla/Ai-Bunny).
-
-**Open the Flash Tool**
-* Launch ESP Flash Download Tool and configure the following:
-* Chip Type: ESP32-S3
-* WorkMode: Develop
-* LoadMode: UART
-
-![Image 38](https://content.instructables.com/F5M/HWOI/MDFMJXAT/F5MHWOIMDFMJXAT.png?auto=webp&frame=1&width=1024&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyMzozMS4w)![Image 39](https://content.instructables.com/F09/VU9D/MDFMJXC1/F09VU9DMDFMJXC1.png?auto=webp&frame=1&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyMzozMy4w&_gl=1*1cuasw8*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)
-**Load the Firmware**
-* In the top blank field, click the “...” button and select your .bin firmware file.
-* Set the start address to: 0x00
-
-![Image 40](https://content.instructables.com/FSF/IL9R/MDFMJY7C/FSFIL9RMDFMJY7C.png?auto=webp&frame=1&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyNjoxOC4w)
-**Select COM Port & Baud Rate**
-* Choose the correct COM port for your device.
-*Set the baud rate to: 1152000
-
-**Erase the Flash**
-* Click “ERASE” to wipe the current firmware from the K10.
-
-**Flash the Firmware**
-* After erase is complete, press “START” to begin flashing the Xiaozhi firmware.
-* Once the tool shows “Finish”, the process is complete.
-
-![Image 41](https://content.instructables.com/FXI/21MC/MDFMJXDA/FXI21MCMDFMJXDA.png?auto=webp&frame=1&width=1024&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyMzozNS4w)![Image 42](https://content.instructables.com/F14/YOYB/MDFMJXH9/F14YOYBMDFMJXH9.png?auto=webp&frame=1&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyMzo0MS4w)![Image 43](https://content.instructables.com/F5Y/MXMS/MDFMJXIM/F5YMXMSMDFMJXIM.png?auto=webp&frame=1&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyMzo0Mi4w)![Image 44](https://content.instructables.com/FN7/P8X1/MDFMJXK0/FN7P8X1MDFMJXK0.png?auto=webp&frame=1&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyMzo0My4w)![Image 45](https://content.instructables.com/FLX/A8FF/MDFMJXLF/FLXA8FFMDFMJXLF.png?auto=webp&frame=1&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyMzo0NS4w)
-* Unplug the USB cable, switch the power ON.
-
-## STEP 7: Initial Configuration
-
-Now that your AI Bunny is running the Xiaozhi firmware, it's time to connect it to the internet and set up its personality!
+PCB Design & Manufacturing
 
-**Wi-Fi Setup**
-* When you power on the UNIHIKER K10 for the first time after flashing, it will automatically enter Wi-Fi configuration mode.
-* On your phone or PC, open Wi-Fi settings and connect to the hotspot named xiaozhi.
-* A configuration page should appear automatically. If not, open a browser and navigate to 192.168.4.1
-* Enter your 2.4GHz Wi-Fi SSID and password (Note: Xiaozhi does not support 5GHz networks.)
-Submit the form to let AI Bunny connect to the internet.
-* Once connected, the K10 will reboot automatically after 3 seconds.
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image66.jpg)
 
-![Image 46](https://content.instructables.com/FVO/UNCO/MDFMJZ7S/FVOUNCOMDFMJZ7S.png?auto=webp&frame=1&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyOToyOC4w&_gl=1*1llehqq*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)![Image 47](https://content.instructables.com/FGY/X23W/MDFMJZ7T/FGYX23WMDFMJZ7T.png?auto=webp&frame=1&width=1024&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyOToyOS4w&_gl=1*fcy86p*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)
-**Device Code & Online Console Setup**
-* After reboot, the K10 will display a 6-digit device code on the screen.
-* Go to the official [Xiaozhi Configuration Site](https://xiaozhi.me/)
-*  Register an account using your mobile phone number.
-* After logging in, click "Add Device" in the console.
-* Enter the 6-digit device code shown on your K10 screen.
+The PCB was designed in KiCad and later manufactured and assembled by NextPCB.
 
-![Image 48](https://content.instructables.com/FWV/X5JP/MDFMJZAX/FWVX5JPMDFMJZAX.png?auto=webp&frame=1&width=1024&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyOTozMS4w&_gl=1*fcy86p*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)![Image 49](https://content.instructables.com/FET/EILN/MDFMJZCJ/FETEILNMDFMJZCJ.png?auto=webp&frame=1&width=1024&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyOTozMy4w&_gl=1*fcy86p*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)
+After submitting the Gerber files, the NextPCB engineering team carefully reviewed the design and identified a few manufacturability issues that could have affected production. They worked directly with me to resolve these before fabrication, ensuring the boards worked perfectly on the very first revision.
 
-**Customize the Personality (Role)**
-- Now it’s time to give AI Bunny its unique personality! In the Configure Role section, you can define how it speaks and what it knows.
-- Here’s a fun example role script you can copy and paste:
-```c
-I'm {{Bunny}}, your cheerful and slightly mischievous AI teacher!
-I love helping people learn—whether it's math, history, coding, or even random fun facts.
-I explain things in simple, playful ways (sometimes with a few jokes), and I’m always here when you need a brain buddy.
-Ask me anything, seriously—no topic is too weird or too hard! Learning should be fun, and I'm here to make it awesome.
+Having an engineering review before manufacturing is incredibly valuable, especially for custom electronics projects, and it helped save both time and cost.
 
-Let’s explore the world together, one question at a time!
-```
+Why I Recommend NextPCB
 
-**Final Configuration**
-* Set the language to English
-* Choose a voice style
-* Select your preferred language model (e.g., DeepSeek or others available)
-* Click Save
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image49.jpg)
 
-Then simply restart your AI Bunny, and you're done!
+If you're designing your own PCBs, I highly recommend checking out NextPCB. In addition to PCB fabrication and assembly services, they provide a Free Online Gerber Viewer and DFM Checker that lets you inspect your board before placing an order.
 
-✅ Congratulations, your AI bunny is now ready to talk, teach, and have fun!
+It supports:
 
-![Image 50](https://content.instructables.com/FEE/0LLY/MDFMJZCN/FEE0LLYMDFMJZCN.png?auto=webp&frame=1&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyOTozNS4w)![Image 51](https://content.instructables.com/FHJ/9YTJ/MDFMJZEA/FHJ9YTJMDFMJZEA.png?auto=webp&frame=1&width=1024&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyOTozNi4w)![Image 52](https://content.instructables.com/FDL/UA7A/MDFMJZHJ/FDLUA7AMDFMJZHJ.png?auto=webp&frame=1&width=1024&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyOTozOC4w)![Image 53](https://content.instructables.com/F6E/9HGM/MDFMJZHK/F6E9HGMMDFMJZHK.png?auto=webp&frame=1&width=1024&fit=bounds&md=MjAyNS0wNy0yMyAwNDoyOTozOS4w)
+* `Gerber RS-274X`
+* `Gerber X2`
+* `Excellon Drill Files`
+* `ODB++`
+* `Native KiCad PCB Files (.kicad_pcb)`
 
-For updated Firmware and Changes check: [UNIHIKER K10: AI Chatbot](https://community.dfrobot.com/makelog-317317.html)
+The online viewer is especially useful for verifying:
 
-References:
-- Xiaozhi-esp32: [https://github.com/78/xiaozhi-esp32](https://github.com/78/xiaozhi-esp32)
+* Silkscreen alignment
+* Drill hole placement
+* Board outline
+* Copper layers
+* Manufacturing errors
+* Design for Manufacturability (DFM) checks
 
-## STEP 8: How It Works?
+It's a quick way to catch mistakes before your PCB goes into production.
 
-![Image 54](https://content.instructables.com/FZ1/5G3A/MDFMKD8J/FZ15G3AMDFMKD8J.png?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMyAwNzoyMjo0NC4w&_gl=1*jyjz32*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)
-Ever wondered how something as small as an ESP32-S3 board can run voice-based AI chat like Xiaozhi? Here's a simple breakdown of how it all comes together under the hood:
+### Useful Links
+* **NextPCB – PCB Manufacturing & Assembly**: [nextpcb.com](https://www.nextpcb.com/)
+* **HQ Components – Electronic Components**: [hqonline.com](https://www.hqonline.com/)
+* **NextPCB Free Online Gerber Viewer & DFM Checker**: [Online Gerber Viewer & DFM Checker](https://www.nextpcb.com/free-online-gerber-viewer.html)
 
-**1. Voice Input via Microphone**
-The UNIHIKER K10 has a built-in digital microphone. When you speak to AI Bunny:
-* Your voice is recorded locally on the device.
-* It uses onboard processing to detect a wake word **Jarvis**or button-press trigger.
+### Design Files
+If you'd like to build your own AI Buddy, I've included all the required PCB files:
+* Gerber Files
+* Bill of Materials (BOM)
+* Pick-and-Place (PnP) Files
 
-**2. Sending Audio to the Cloud**
-Once the audio is captured:
-* The device connects to the internet via Wi-Fi (configured in Step 7).
-* The audio data is sent securely to Xiaozhi's cloud servers (xiaozhi.me).
-* Xiaozhi servers use advanced models (like DeepSeek) to transcribe, understand, and generate a response.
+These files can be uploaded directly to NextPCB for fabrication and assembly, making it easy to reproduce the custom BMS for your own build.
 
-**3. Natural Language Processing**
-* The voice is first converted to text (STT - Speech to Text).
-* The text is processed using a language model (e.g., DeepSeek) to generate a smart reply.
-* The reply is then converted back to speech (TTS - Text to Speech) using the voice style you've chosen in the console.
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/PCBS.JPG)
 
-**4. Voice Output via Speaker**
-* The final audio is streamed back to your device.
-* The built-in speaker on the K10 plays the response out loud in real time.
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/PCBA2.JPG)
 
-**5. Device - Cloud Loop**
-This entire interaction, from voice input to spoken output, happens in just a few seconds. Thanks to:
-* The ESP32-S3's Wi-Fi & USB support
-* Xiaozhi’s lightweight yet powerful firmware
-*A smart use of cloud AI + local interface
+# Designing the Enclosure in Fusion 360
 
-**In Simple Terms, It's Like Jarvis!**
-Just like Jarvis from Iron Man, your AI Bunny is always ready to help:
-* Wake it up either with a wake word Jarvis or button.
-* It will say "Listening..."
-* You can ask anything, a question, a fun fact, or even start a conversation.
-* The device will respond back with a voice, just like a smart assistant.
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image23.png)
 
-**The two on-board buttons of the K10 function as follows:**
-- A: Short press - interrupt/wake up, long press 1s - volume up.
-- B: Short press - interrupt/wake up, long press 1s - volume down
+To give AI Buddy its friendly personality while keeping the electronics compact and easy to assemble, I designed the entire enclosure in Fusion 360. The design focuses on simplicity, modularity, and easy customization, allowing anyone to create their own unique AI Buddy character.
 
-## Conclusion
-![Image 55](https://content.instructables.com/FO5/IKB6/MDG8PTZV/FO5IKB6MDG8PTZV.jpg?auto=webp&frame=1&width=1024&height=1024&fit=bounds&md=MjAyNS0wNy0yMyAyMzozMToyNi4w&_gl=1*1a7el1c*_ga*MTg5ODg0MTkxNS4xNzUyNzU2OTk5*_ga_NZSJ72N6RX*czE3NTQ0ODgzMjckbzQ3JGcxJHQxNzU0NDg5Mjk5JGozMyRsMCRoMA..)
+The enclosure consists of four printed parts:
+* 1× Front Housing
+* 1× Rear Cover
+* 2× Button Extensions
 
-Ai Bunny is a fun and functional tool that brings together AI, hardware, and design into a single, playful experience.
+### Front Housing
 
-It's not just a cute bunny, it's a fully working AI companion that listens, speaks, responds, and learns. Whether used for language practice, storytelling, or just fun conversations, it's a great example of what's possible with edge AI on ESP32-S3.
+The front housing forms the face of AI Buddy and holds the DFRobot UNIHIKER K10 securely in place.
 
-This project shows that with just a single board, some 3D printing, and open-source tools, you can build a real-world voice assistant, no cloud subscription or bulky setup required.
+It includes:
+* Display opening for the LCD
+* USB Type-C opening for programming the UNIHIKER
+* Openings for the UNIHIKER onboard buttons using external button extensions
+* Smooth rounded edges for a toy-like appearance
 
-More than anything, Bun Buddy proves that tech doesn't have to be boring or overly complex to be meaningful. It can be fun, approachable, and kid-friendly, while still teaching important concepts in AI, coding, and electronics.
+This is the only part that changes between different character designs.
 
+### Rear Cover
+
+The rear cover was designed to do much more than simply close the enclosure.
+
+It features:
+* Dedicated mounting points for the custom BMS PCB
+* USB Type-C opening for charging through the BMS
+* Opening for the BMS power button
+* Camera opening aligned with the UNIHIKER camera
+* Four screw mounting points for assembly
+
+The rear cover remains identical for every AI Buddy character, making it reusable across all enclosure designs.
+
+### Button Extensions
+
+The UNIHIKER K10 has onboard push buttons located inside the enclosure. To make them accessible from the outside, I designed two small button extension pieces that transfer the button press to the onboard switches.
+
+These buttons are used for:
+* Wake/Sleep
+* Volume Up
+* Volume Down
+* Other functions supported by the firmware
+
+The complete enclosure is assembled using four M2 screws that fasten the rear cover to the front housing.
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/1.png)
+
+### Multiple Character Designs
+
+One of the goals of AI Buddy was to make it easy to personalize.
+
+Instead of redesigning the entire enclosure every time, I made only the front housing interchangeable. The rear cover, button extensions, and internal hardware remain exactly the same.
+
+So far, I've designed several characters, including:
+
+* 🐰 Bunny
+* 🦊 Fox
+* 🐱 Cat
+* 🦒 Giraffe
+
+Since the internal dimensions are identical, you can even create your own custom character in Fusion 360 while reusing all the existing electronics and rear components.
+
+This modular approach makes AI Buddy easy to customize, print, and expand into an entire collection of AI companions.
+
+AI Buddy Fusion 360
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/2.png)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/3.png)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/4.png)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image45.png)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image55.png)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image16.png)
+
+# Step 1: 3D Printing the Parts
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/3DPrint.JPG)
+
+With the enclosure design complete, it's time to bring AI Buddy to life using a 3D printer.
+
+For this build, I printed all the parts on my Bambu Lab P1S using standard PLA print settings:
+
+* **PLA Filament**
+* **0.4 mm Nozzle**
+* **0.2 mm Layer Height**
+Bunny Version
+
+For the main build featured in this Instructable, I printed the Bunny enclosure using Yellow PLA, giving it a bright and cheerful appearance that's perfect for an AI companion.
+
+Other Character Variants
+
+Here are the versions I printed with the PLA Colors I have:
+
+* 🦊 Fox — Red PLA
+* 🐱 Cat — Orange PLA
+* 🐰 Bunny — Yellow PLA
+* 🦒 Giraffe — Bronze PLA
+Feel free to experiment with different filament colors or even create your own custom character.
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image54.jpg)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image47.jpg)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image50.jpg)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image41.jpg)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image63.jpg)
+
+# Step 2: Assemble the Front Housing
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image14.jpg)
+
+![AI Buddy Step Animation](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/GIF2_optimized.gif)
+
+Now it's time to install the DFRobot UNIHIKER K10 into the 3D-printed front housing.
+
+Before starting, make sure you have:
+
+* 1× Front Housing
+* 2× Button Extensions
+* 1× DFRobot UNIHIKER K10
+Begin by inserting the two button extension pieces into their dedicated slots on the side of the housing.
+
+These extensions will press the onboard buttons of the UNIHIKER once it is installed. Ensure they move freely and are not obstructed.
+
+Next, carefully place the UNIHIKER K10 into the housing from the rear.
+
+While lowering the board into place, make sure that:
+
+* The USB Type-C programming port aligns with the opening at the top of the enclosure.
+* The onboard buttons align correctly with the button extensions.
+Once installed, gently press each button extension to verify that it actuates the corresponding onboard button on the UNIHIKER.
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image46.jpg)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image32.jpg)
+
+# Step 3: Install the Custom BMS
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image64.jpg)
+
+Time to install the custom Battery Management System (BMS) into the rear cover.
+
+Parts Required
+
+* 1× Rear Cover
+* 1× Custom BMS PCB
+* 2× M2 Screws
+Place the BMS PCB onto the mounting posts inside the rear cover.
+
+While positioning the board, make sure that:
+
+* The USB Type-C charging port is perfectly aligned with the side opening in the cover.
+* The power button aligns with its corresponding cutout.
+* The PCB sits flat against the mounting posts without any stress or bending.
+Once everything is aligned, fasten the BMS to the rear cover using two M2 screws.
+
+Avoid over-tightening the screws, as this could damage the PCB or the 3D-printed mounting posts. Tighten them just enough to hold the board securely in place.
+
+![AI Buddy Step Animation](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/GIF3_optimized.gif)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image60.jpg)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image58.jpg)
+
+# Step 4: Connect the Battery
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image62.jpg)
+
+Now it's time to connect the battery and prepare the power connections for the UNIHIKER K10.
+
+Parts Required
+
+* 1× Li-Po Battery With 2 Pi JST
+* 1× Custom BMS Assembly
+* 1× 2-Pin JST Cable
+Start by plugging the Li-Po battery's JST connector into the Battery IN connector on the BMS.
+
+Next, take the 2-pin JST cable and plug one end into the Battery OUT connector on the BMS.
+
+Leave the other end disconnected for now—it will be connected to the battery connector on the UNIHIKER K10 in the next step after both assemblies are brought together.
+
+![AI Buddy Step Animation](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/GIF4_optimized.gif)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image56.jpg)
+
+# Step 5: Final Assembly
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image30.jpg)
+
+With both sub-assemblies complete, it's time to put everything together and complete your AI Buddy.
+
+Parts Required
+
+* Front Housing Assembly (with UNIHIKER K10 installed)
+* Rear Cover Assembly (with BMS installed)
+* 4× M2 Screws
+Take the free end of the 2-pin JST cable connected to the BMS Battery OUT connector and plug it into the battery connector on the UNIHIKER K10.
+
+Carefully place the Li-Po battery inside the housing.
+
+Arrange the battery and cables neatly.
+
+Bring the rear cover and front housing together.
+
+Finally, fasten the rear cover to the front housing using four M2 screws.
+
+Tighten each screw evenly until the enclosure is secure. Avoid over-tightening, as this may damage the 3D-printed parts.
+
+🎉 That's it! Your AI Buddy hardware is now fully assembled and ready for firmware installation and configuration in the next step.
+
+![AI Buddy Step Animation](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/GIF5_optimized.gif)
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/GIF6_optimized.gif)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image13.jpg)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image37.jpg)
+
+# Step 6: Installing the Firmware
+
+![AI Buddy Step Animation](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/Flashing.gif)
+
+With the hardware fully assembled, it's time to install the firmware. The process is incredibly simple and doesn't require installing the Arduino IDE, PlatformIO, ESP IDF or compiling any code.
+
+I created an Easy Flash web tool that automatically downloads and installs the latest firmware onto your AI Buddy.
+
+Flash the Firmware
+
+Open the Easy Flash website: https://mukeshsankhla.github.io/EasyFlash/#/project/ai-buddy
+
+Connect your AI Buddy to your computer using a USB Type-C cable connected to the UNIHIKER K10 USB Type-C data port.
+
+Click Connect & Flash.
+
+Select the correct serial port from the list.
+
+The tool will automatically:
+
+* Connect to the device
+* Download the latest firmware
+* Flash it onto the UNIHIKER K10
+The entire process only takes about one minute. Once flashing is complete, you'll see a success message indicating that the firmware has been installed successfully.
+
+After the firmware is installed, AI Buddy will automatically boot into the Wi-Fi Configuration screen. In the next step, we'll connect the device to your Wi-Fi network so it can communicate with the AI services.
+
+Firmware Credits
+
+The firmware used in this project is developed by the DFRobot UNIHIKER Team and is built on the open-source Xiaozhi ESP32 project. It provides the voice assistant functionality and AI interaction that powers AI Buddy.
+
+If you'd like to explore the source code, contribute to the project, or learn more about how it works, be sure to check out the Xiaozhi ESP32 repository: https://github.com/78/xiaozhi-esp32
+
+A huge thanks to the DFRobot team and the Xiaozhi contributors for making this amazing open-source project possible.
+
+# Step 7: Configure AI Buddy
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image36.jpg)
+
+After booting for the first time, AI Buddy will automatically create a Wi-Fi hotspot named: Xiaozhi-XXXX
+
+Using your mobile phone or computer, connect to this Wi-Fi network.
+
+Once connected, open your web browser and navigate to: http://192.168.4.1
+
+On the configuration page, enter:
+
+2.4 GHz Wi-Fi SSID
+
+Wi-Fi Password
+
+> [!NOTE]
+> Note: AI Buddy currently supports 2.4 GHz Wi-Fi networks only.
+
+Click Connect.
+
+After a few seconds, AI Buddy will connect to your Wi-Fi network.
+
+Link Your Device:
+
+Once connected successfully, AI Buddy will:
+
+* 🔊 Speak a 6-digit pairing code
+* 📺 Display the same 6-digit code on the screen
+Next, open: https://xiaozhi.me/
+
+Create an account (or log in if you already have one), then open the Console.
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image65.png)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image59.png)
+
+Click + Add Device and enter the 6-digit pairing code.
+
+Your AI Buddy is now linked to your account.
+
+This pairing process only needs to be completed once. As long as AI Buddy connects to the same Wi-Fi network in the future, it will automatically reconnect to your account.
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image48.png)
+
+Configure Your AI Buddy:
+
+Once your device appears in the Console, click Configure Role.
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image18.png)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image51.png)
+
+Here you can personalize almost every aspect of your AI companion.
+
+### 🌍 Language
+
+Choose from a wide range of supported languages, including:
+
+* English
+* Chinese
+* Hindi
+* ...and many more international languages.
+### 🎤 Voice
+
+Select the voice that best suits your character.
+
+You can choose from multiple:
+
+* Male voices
+* Female voices
+* Different speaking styles
+### 🧸 Role Introduction
+
+This is where the personality of your AI Buddy is defined.
+
+For example, my bunny character is named Jolly:
+
+Your Name: Jolly
+
+Jolly is a cheerful, kind-hearted bunny who loves to learn, play, and explore the world with children. Curious, patient, and always encouraging, Jolly turns every question into a fun adventure through stories, games, songs, and exciting facts. Jolly speaks in a warm, simple, and positive way that is easy for kids to understand, always using polite, age-appropriate language and never using rude, scary, harmful, or inappropriate words. Jolly celebrates curiosity, creativity, kindness, honesty, and respect, gently encouraging children to think, imagine, and solve problems while making children feel safe, confident, and happy every step of the way.
+
+Feel free to create your own personality, whether it's a teacher, storyteller, language tutor, robot, pirate, or any other fun character.
+
+### 🧠 Choose the AI Model
+
+You can also select the Large Language Model (LLM) that powers AI Buddy.
+
+Depending on what's available on the platform, supported models may include:
+
+* Xiaozhi Lite
+* Qwen
+* DeepSeek
+* GPT-5...
+### ⚙️ Advanced Settings
+
+The advanced settings allow you to fine-tune how your AI Buddy sounds.
+
+You can adjust:
+
+* Voice Speed
+* Voice Pitch
+This lets you create anything from a mature assistant to a playful cartoon-like companion.
+
+Once you're happy with the settings, click Save.
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image31.jpg)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image19.jpg)
+
+Start Talking!
+
+🎉 That's it—your AI Buddy is now ready to use!
+
+Simply say the default wake word:
+
+"Jarvis"
+
+or press either of the A/B side buttons to wake the assistant and start your conversation.
+
+By default, AI Buddy displays emoji facial expressions on its screen. During conversations, it automatically switches between 21 different emoji expressions, making interactions feel much more lively and engaging based on the context and emotion of the conversation.
+
+# Customize Your AI Buddy
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image20.png)
+
+One of the best features of the Xiaozhi platform is how easy it is to personalize your AI Buddy. You can customize everything from the wake word and font to emoji expressions and the overall theme, giving your companion its own unique personality.
+
+To get started, open the Xiaozhi Console, then navigate to Manage Devices.
+
+When your AI Buddy is online, you'll see a Customize button. Click it to launch the customization wizard.
+
+The first page displays your device's chip configuration.
+
+No changes are required here—simply click Next to continue.
+
+Theme Designer
+
+The Theme Designer contains four customization tabs:
+
+* Wake Word Config
+* Font Config
+* ### Emoji Collection
+* ### Chat Background
+Let's explore each one.
+
+### Wake Word Configuration
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/Customization-1_optimized.gif)
+
+Here you can decide how AI Buddy is activated.
+
+You have three options:
+
+* No Wake Word
+* Preset Wake Words
+* Custom Wake Word
+The preset list contains several ready-to-use wake words. For my AI Buddy, I selected:
+
+"Hi, Jolly"
+
+You can also create your own custom wake word and adjust the wake sensitivity.
+
+> [!TIP]
+> My Recommendation: I recommend using one of the preset wake words. In my testing, I found that custom wake words were occasionally triggered by background sounds or speech. This could be improved by adjusting the sensitivity, so feel free to experiment and find the settings that work best for your environment.
+
+### Font Configuration
+
+This section lets you customize how text appears on the display.
+
+You can:
+
+* Increase or decrease the font size
+* Switch between different font styles
+* Upload your own custom font
+* Hide subtitles completely if you prefer a cleaner screen
+This makes it easy to match the display to your character's style.
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/Customization-2_optimized.gif)
+
+* ### Emoji Collection
+One of my favorite customization features is the ### Emoji Collection.
+
+You can choose between:
+
+* No Emoji Pack (blank screen)
+* Preset Emoji Packs (yellow emojis with static and animated expressions)
+* Custom Emoji Pack
+For AI Buddy, I created my own custom emoji pack.
+
+I designed 21 full-screen facial expressions in Canva, each with a resolution of 240 × 320 pixels and a transparent background. After exporting them as PNG images, I uploaded each expression individually through the customization interface.
+
+These custom faces give AI Buddy a much more unique personality compared to the default emoji pack.
+
+* ### Chat Background
+Finally, you can customize the appearance of the chat screen.
+
+Both Light and Dark themes allow you to change:
+
+* Background Color
+* Text Color
+For my Bunny version, I chose:
+
+* Background: Yellow (to match the enclosure)
+* Text: Orange
+This creates a soft, friendly appearance while keeping the text easy to read without being too distracting.
+
+Feel free to experiment with different color combinations to match your own character or enclosure design.
+
+Generate and Flash Your Theme
+
+Once you've finished customizing everything, click Next to open the Preview & Generate page.
+
+Review your changes, then click: Generate assets.bin
+
+Finally, click: Flash to Device Online
+
+The Xiaozhi platform will upload the generated theme directly to your AI Buddy using Over-the-Air (OTA) updates.
+
+Within a few seconds, your device will reboot and apply all the new customizations.
+
+If you changed the wake word, the previous wake word will no longer work, and you'll need to use the new one to activate your AI Buddy.
+
+At this point, your AI Buddy is fully personalized with your own wake word, fonts, emoji expressions, and color theme, making it truly one of a kind.
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image25.jpg)
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image68.jpg)
+
+# Explore More Features of Xiaozhi
+
+![Xiaozhi Platform Features](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/XiaozhiFeatures.png)
+
+Beyond voice conversations, the Xiaozhi platform includes several powerful features that make AI Buddy much more than just a talking companion.
+
+Chat History:
+
+Every conversation with AI Buddy is automatically saved in the Xiaozhi Console.
+
+This allows you to:
+
+* Review previous conversations
+* Monitor how children are interacting with AI Buddy
+* Check the questions being asked and the responses generated
+For parents and educators, this can be a useful way to understand how kids are using the device and what topics they're most interested in.
+
+Speaker Recognition
+
+Xiaozhi also supports Speaker Recognition, allowing AI Buddy to identify different people by their voices.
+
+After a few conversations, you can select a recorded voice profile and assign it:
+
+* A Name (e.g., Mukesh)
+* A Description or Introduction
+Once trained, AI Buddy can recognize who is speaking and personalize conversations based on the identified user.
+
+This feature is especially useful when multiple family members share the same AI Buddy.
+
+MCP (Model Context Protocol)
+
+One of the most powerful features of Xiaozhi is support for MCP (Model Context Protocol).
+
+Using MCP, AI Buddy can interact with external services and devices, enabling tasks such as:
+
+* 🏠 Controlling smart home devices
+* 💡 Turning lights and appliances on or off
+* 📊 Monitoring sensors and IoT devices
+* 🤖 Triggering software automations
+* 🔗 Integrating with external APIs and online services
+I've created a dedicated tutorial showing how to use MCP with Xiaozhi in another project. If you'd like to learn more, check it out here:
+
+Mino – The AI Chatbot https://www.hackster.io/Mukesh_Sankhla/mino-the-ai-chatbot-34c38e
+
+Knowledge Base:
+
+The Knowledge Base feature allows you to teach AI Buddy information that may not already exist in the selected Large Language Model (LLM).
+
+You can upload or create your own knowledge sources, including:
+
+* Documents
+* PDFs
+* Text files
+* Custom topics
+* Reference materials
+Once added, AI Buddy can use this information during conversations, allowing it to answer questions about your custom content.
+
+This is particularly useful for creating:
+
+* 📚 Educational learning assistants
+* 🏫 Classroom teaching aids
+* 🏢 Company-specific assistants
+* 📖 Product documentation helpers
+* 🎓 Subject-specific tutors
+The Knowledge Base transforms AI Buddy from a general-purpose chatbot into a personalized assistant that understands the information most relevant to you.
+
+# How Xiaozhi Works (Technical Explanation)
+
+![Xiaozhi](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/xiaozhi_diagram.png)
+
+The UNIHIKER K10 acts as a smart edge client while the complex Speech-to-Text (STT), Large Language Model (LLM), and Text-to-Speech (TTS) processing are offloaded to high-performance cloud engines via the Xiaozhi Server.
+
+Many people think AI Buddy runs a large language model directly on the device.
+
+Running modern AI models such as GPT-5 or DeepSeek directly on a small microcontroller isn't practical due to their computational and memory requirements.
+
+In reality, the UNIHIKER K10 acts as an intelligent edge device, while the heavy AI processing happens in the cloud.
+
+Here's what happens behind the scenes every time you talk to AI Buddy.
+
+1. Wake Up
+
+The interaction begins when you either:
+
+Say the configured wake word (for example, "Hi, Jolly"), or
+
+Press one of the A/B buttons on the side of the device.
+
+AI Buddy then starts listening for your voice.
+
+2. Voice Capture
+
+The dual MEMS microphones on the UNIHIKER K10 capture your speech.
+
+The firmware processes the audio in real time and prepares it for transmission over Wi-Fi.
+
+3. Audio Sent to Xiaozhi Server
+
+Instead of trying to process AI locally, the UNIHIKER securely sends the captured voice data to the Xiaozhi Server over the internet.
+
+The server acts as the central brain of the system.
+
+4. Speech-to-Text (STT)
+
+The first cloud service converts your spoken words into text using Speech-to-Text (STT).
+
+For example:
+
+"What's the weather like today?"
+
+becomes
+
+"What's the weather like today?"
+
+Now the server has a text version of your question.
+
+5. AI Processing
+
+The recognized text is then sent to the selected Large Language Model (LLM).
+
+Depending on your configuration, this could be:
+
+* Xiaozhi Lite
+* Qwen
+* DeepSeek
+GPT-5
+
+Other supported models
+
+The LLM analyzes the prompt together with:
+
+Your configured role/personality
+
+Conversation history
+
+Knowledge Base (if enabled)
+
+MCP tools (if required)
+
+The model generates the most appropriate response.
+
+6. Text-to-Speech (TTS)
+
+The generated response is converted into natural speech using a Text-to-Speech (TTS) engine.
+
+At the same time, the server can determine the appropriate facial expression based on the conversation.
+
+7. Response Sent Back to AI Buddy
+
+The Xiaozhi server sends the following back to the device:
+
+Spoken audio
+
+Conversation text
+
+Emoji or facial expression
+
+Additional commands (if needed)
+
+8. Playback on the Device
+
+Finally, AI Buddy brings the response to life.
+
+The result is a smooth, natural conversation that feels like you're talking to a real companion.
+
+# Conclusion
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/docx_image67.jpg)
+
+Building AI Buddy has been a truly rewarding journey. What started over a year ago as my first prototype, AI Bunny, has gradually evolved into a much more polished, modular, and easy-to-build AI companion. Throughout this journey, I continuously refined the enclosure design, simplified the assembly process, and developed a custom battery management system to make the project more practical for everyday use. At the same time, the Xiaozhi platform has continued to grow, introducing new features, better customization options, and support for more AI models, making AI Buddy even more capable with each update.
+
+My vision for this project has always been simple: to give children an engaging way to experience artificial intelligence without increasing their mobile screen time. Rather than handing over a smartphone or tablet, AI Buddy provides a dedicated device that encourages conversation, curiosity, storytelling, and learning in a more natural and interactive way.
+
+Another important goal was to make this project easy to replicate. I wanted makers, students, educators, and even young learners to be able to build their own AI Buddy without requiring advanced electronics knowledge. The modular enclosure, straightforward wiring, browser-based firmware flashing, and minimal assembly make it an approachable project for a wide range of skill levels.
+
+Since the DFRobot UNIHIKER K10 is already part of the curriculum in many schools and educational programs, I hope AI Buddy can serve as an exciting extension to that learning experience. Instead of using the board only for classroom exercises, students can transform it into a real-world AI companion while exploring electronics, 3D printing, PCB design, embedded programming, and modern AI technologies—all within a single project.
+
+This is just the beginning. As the Xiaozhi ecosystem continues to evolve and new AI capabilities become available, AI Buddy can grow alongside it through firmware and cloud updates. I look forward to expanding the project with new characters, accessories, educational features, and community contributions.
+
+If you decide to build your own AI Buddy, I'd love to see your creations. Whether you customize the enclosure, design your own character, create new emoji packs, or add entirely new features.
+
+Happy making! 🚀🤖
+
+![AI Buddy Image](https://github.com/MukeshSankhla/AI-Buddy/raw/main/images/IMG1.JPG)
+
+# License & Copyright
+
+Copyright (c) 2026 Mukesh Sankhla.
+
+This project is open-source hardware and software licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)** license.
+
+### Under this license, you are free to:
+* **Share** — copy and redistribute the material in any medium or format.
+* **Adapt** — remix, transform, and build upon the material.
+
+### Under the following terms:
+* **Attribution** — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+* **NonCommercial** — You may not use the material for commercial purposes.
+* **ShareAlike** — If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original.
+
+For the full legal code, please refer to the [LICENSE](LICENSE) file or visit the [Creative Commons website](https://creativecommons.org/licenses/by-nc-sa/4.0/).
