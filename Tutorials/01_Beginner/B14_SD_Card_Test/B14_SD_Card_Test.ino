@@ -3,6 +3,7 @@
 #include "SD.h"
 
 UNIHIKER_K10 k10;
+uint8_t screen_dir = 2; // Portrait orientation (240x320)
 
 // Helper to get descriptive SD card format type
 String getCardType() {
@@ -15,48 +16,76 @@ String getCardType() {
     }
 }
 
-// Function to scan and display SD card status & file listings using small font
+// Non-blocking button edge-detection tracker
+bool checkButtonAPressed() {
+    static bool lastState = false;
+    static unsigned long lastDebounceTime = 0;
+    bool reading = k10.buttonA->isPressed();
+    bool pressedEvent = false;
+
+    if (reading != lastState) {
+        lastDebounceTime = millis();
+    }
+    if ((millis() - lastDebounceTime) > 35) {
+        static bool stableState = false;
+        if (reading != stableState) {
+            stableState = reading;
+            if (stableState) {
+                pressedEvent = true;
+            }
+        }
+    }
+    lastState = reading;
+    return pressedEvent;
+}
+
+// Function to scan and display SD card status & file listings
 void checkSDCard() {
-    // Clear canvas and reset background
     k10.canvas->canvasClear();
-    k10.setScreenBackground(0x000000);
+    // Retro Matrix Carbon background
+    k10.setScreenBackground(0x0D1117);
 
-    // Header Title (24px bold)
-    k10.canvas->canvasText("SD CARD TEST", 45, 14, 0xFEE715,
-                           k10.canvas->eCNAndENFont24, 20, false);
-    // Decorative separator rule
-    k10.canvas->canvasLine(15, 42, 225, 42, 0x334155);
+    // 1. Header Banner
+    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x161B22, 0x161B22, true);
+    k10.canvas->canvasLine(0, 42, 240, 42, 0x00FF87);
+    k10.canvas->canvasText("SD STORAGE", 52, 10, 0x00FF87,
+                           k10.canvas->eCNAndENFont24, 15, false);
 
-    // Initialize/detect SD card
+    // 2. Detect SD card
     bool isConnected = SD.begin();
 
     if (!isConnected || SD.cardType() == CARD_NONE) {
-        // SD card not detected or cannot be initialized (small 16px font)
-        k10.canvas->canvasText("Status: Not Connected", 15, 55, 0xFF5555,
-                               k10.canvas->eCNAndENFont16, 26, false);
-        k10.canvas->canvasText("No SD card found", 15, 80, 0xFF5555,
-                               k10.canvas->eCNAndENFont16, 26, false);
-        k10.canvas->canvasText("Please insert a FAT32", 15, 120, 0x94A3B8,
-                               k10.canvas->eCNAndENFont16, 26, false);
-        k10.canvas->canvasText("MicroSD card and", 15, 140, 0x94A3B8,
-                               k10.canvas->eCNAndENFont16, 26, false);
-        k10.canvas->canvasText("press Button A to scan.", 15, 160, 0x00E5FF,
-                               k10.canvas->eCNAndENFont16, 26, false);
+        // Not connected card
+        k10.canvas->canvasRectangle(14, 54, 212, 130, 0xEF4444, 0x1C1317, true);
+        k10.canvas->canvasText("Status: Disconnected", 26, 68, 0xEF4444,
+                               k10.canvas->eCNAndENFont16, 22, false);
+        k10.canvas->canvasText("No FAT32 MicroSD detected", 26, 94, 0x94A3B8,
+                               k10.canvas->eCNAndENFont16, 24, false);
+        k10.canvas->canvasText("Insert card into K10 slot", 26, 120, 0x94A3B8,
+                               k10.canvas->eCNAndENFont16, 24, false);
+        k10.canvas->canvasText("Press [A] to scan again", 26, 148, 0x60EFFF,
+                               k10.canvas->eCNAndENFont16, 22, false);
     } else {
-        // SD card detected successfully!
         String cardType = getCardType();
         File root = SD.open("/");
 
         if (!root || !root.isDirectory()) {
-            k10.canvas->canvasText("Status: Read Error", 15, 55, 0xFF5555,
-                                   k10.canvas->eCNAndENFont16, 26, false);
-            k10.canvas->canvasText("Cannot open root dir", 15, 80, 0xFF5555,
-                                   k10.canvas->eCNAndENFont16, 26, false);
+            k10.canvas->canvasRectangle(14, 54, 212, 90, 0xEF4444, 0x1C1317, true);
+            k10.canvas->canvasText("Status: Read Error", 26, 68, 0xEF4444,
+                                   k10.canvas->eCNAndENFont16, 22, false);
+            k10.canvas->canvasText("Cannot open root dir", 26, 94, 0x94A3B8,
+                                   k10.canvas->eCNAndENFont16, 22, false);
         } else {
             int fileCount = 0;
-            int yPos = 95;
-            const int maxDisplayFiles = 10;
+            int yPos = 88;
+            const int maxDisplayFiles = 8;
             File file = root.openNextFile();
+
+            // Status header pill
+            k10.canvas->canvasRectangle(14, 50, 212, 30, 0x30363D, 0x161B22, true);
+            String statStr = "Online (" + cardType + ")";
+            k10.canvas->canvasText(statStr, 24, 56, 0x00FF87,
+                                   k10.canvas->eCNAndENFont16, 20, false);
 
             while (file) {
                 fileCount++;
@@ -66,76 +95,51 @@ void checkSDCard() {
                         fileName = fileName.substring(1);
                     }
                     if (file.isDirectory()) {
-                        fileName = "[DIR] " + fileName;
+                        fileName = "/" + fileName;
                     }
-                    // Display each file in small 16px font
-                    k10.canvas->canvasText(fileName, 15, yPos, 0x00E5FF,
-                                           k10.canvas->eCNAndENFont16, 26, false);
-                    yPos += 19;
+                    // Truncate long file names safely to 22 characters
+                    if (fileName.length() > 22) {
+                        fileName = fileName.substring(0, 19) + "...";
+                    }
+                    k10.canvas->canvasText(fileName, 24, yPos, 0x60EFFF,
+                                           k10.canvas->eCNAndENFont16, 24, false);
+                    yPos += 20;
                 }
                 file = root.openNextFile();
             }
 
             if (fileCount == 0) {
-                // Connected, but empty filesystem (small 16px font)
-                k10.canvas->canvasText("Status: Connected (" + cardType + ")", 15, 55, 0x00FF00,
-                                       k10.canvas->eCNAndENFont16, 26, false);
-                k10.canvas->canvasText("SD card connected", 15, 85, 0x00FF00,
-                                       k10.canvas->eCNAndENFont16, 26, false);
-                k10.canvas->canvasText("but no files", 15, 105, 0xFEE715,
-                                       k10.canvas->eCNAndENFont16, 26, false);
-                k10.canvas->canvasText("Add files to card &", 15, 140, 0x94A3B8,
-                                       k10.canvas->eCNAndENFont16, 26, false);
-                k10.canvas->canvasText("press Button A to re-scan.", 15, 160, 0x00E5FF,
-                                       k10.canvas->eCNAndENFont16, 26, false);
-            } else {
-                // Connected and files found (small 16px font)
-                k10.canvas->canvasText("Status: Connected (" + cardType + ")", 15, 52, 0x00FF00,
-                                       k10.canvas->eCNAndENFont16, 26, false);
-                k10.canvas->canvasText("Files found (" + String(fileCount) + "):", 15, 72, 0xFEE715,
-                                       k10.canvas->eCNAndENFont16, 26, false);
-                if (fileCount > maxDisplayFiles) {
-                    int remaining = fileCount - maxDisplayFiles;
-                    k10.canvas->canvasText("...and " + String(remaining) + " more", 15, yPos, 0x94A3B8,
-                                           k10.canvas->eCNAndENFont16, 26, false);
-                }
+                k10.canvas->canvasText("Card is empty (No files)", 24, 100, 0xFEE715,
+                                       k10.canvas->eCNAndENFont16, 24, false);
             }
         }
     }
 
-    // Bottom helper prompt in compact 16px font
-    k10.canvas->canvasText("Press Button A: Re-scan", 15, 300, 0x64748B,
-                           k10.canvas->eCNAndENFont16, 26, false);
+    // 3. Centered Navigation Footer Bar (Zero-overflow)
+    k10.canvas->canvasLine(15, 276, 225, 276, 0x30363D);
+    k10.canvas->canvasRectangle(20, 280, 200, 32, 0x30363D, 0x161B22, true);
+    k10.canvas->canvasText("[A] Re-Scan Storage", 42, 288, 0x00FF87,
+                           k10.canvas->eCNAndENFont16, 20, false);
 
-    // Push canvas buffer to physical screen
     k10.canvas->updateCanvas();
 }
 
 void setup() {
     k10.begin();
-    k10.initScreen(2);                 // Portrait orientation (240x320)
-    k10.creatCanvas();                 // Create 2D canvas buffer
-    k10.setScreenBackground(0x000000);   // Deep black background
+    k10.initScreen(screen_dir);
+    k10.creatCanvas();
 
-    // Initial check on boot
+    k10.rgb->brightness(5);
+    k10.rgb->write(-1, 0x00FF87); // Matrix Mint glow
+
     checkSDCard();
 }
 
 void loop() {
-    // Press Button A anytime to re-scan the SD card
-    if (k10.buttonA->isPressed()) {
-        k10.canvas->canvasText("Scanning SD card...", 15, 300, 0xFFFF00,
-                               k10.canvas->eCNAndENFont16, 26, false);
-        k10.canvas->updateCanvas();
-        delay(300);
-
+    // Non-blocking Button A: Trigger SD Card Re-Scan
+    if (checkButtonAPressed()) {
         checkSDCard();
-
-        // Wait for button release
-        while (k10.buttonA->isPressed()) {
-            delay(50);
-        }
     }
 
-    delay(50);
+    delay(25); // Responsive loop tick
 }

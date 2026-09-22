@@ -5,51 +5,108 @@ uint8_t screen_dir = 2; // Portrait orientation (240x320)
 
 bool isViewingPhoto = false;
 
-// Draw Camera Viewfinder HUD (Top & Bottom bars for maximum text readability)
-void drawCameraHUD(String statusMessage, uint32_t statusColor) {
+// Non-blocking button edge-detection trackers
+bool checkButtonAPressed() {
+    static bool lastState = false;
+    static unsigned long lastDebounceTime = 0;
+    bool reading = k10.buttonA->isPressed();
+    bool pressedEvent = false;
+
+    if (reading != lastState) {
+        lastDebounceTime = millis();
+    }
+    if ((millis() - lastDebounceTime) > 35) {
+        static bool stableState = false;
+        if (reading != stableState) {
+            stableState = reading;
+            if (stableState) {
+                pressedEvent = true;
+            }
+        }
+    }
+    lastState = reading;
+    return pressedEvent;
+}
+
+bool checkButtonBPressed() {
+    static bool lastState = false;
+    static unsigned long lastDebounceTime = 0;
+    bool reading = k10.buttonB->isPressed();
+    bool pressedEvent = false;
+
+    if (reading != lastState) {
+        lastDebounceTime = millis();
+    }
+    if ((millis() - lastDebounceTime) > 35) {
+        static bool stableState = false;
+        if (reading != stableState) {
+            stableState = reading;
+            if (stableState) {
+                pressedEvent = true;
+            }
+        }
+    }
+    lastState = reading;
+    return pressedEvent;
+}
+
+// Draw Leica Pro Viewfinder HUD
+void drawCameraHUD(const char* statusMessage, uint32_t statusColor) {
     k10.canvas->canvasClear();
 
-    // 1. Top HUD Header Bar
-    k10.canvas->canvasRectangle(0, 0, 240, 48, 0x000000, 0x000000, true);
-    k10.canvas->canvasText("K10 CAMERA", 52, 12, 0xFEE715,
-                           k10.canvas->eCNAndENFont24, 20, false);
+    // 1. Top Viewfinder Header Bar
+    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x0A0A0A, 0x0A0A0A, true);
+    k10.canvas->canvasCircle(24, 21, 6, 0xEA2B2B, 0xEA2B2B, true); // Leica Red Dot
+    k10.canvas->canvasText("PRO CAMERA", 52, 10, 0xFAFAFA,
+                           k10.canvas->eCNAndENFont24, 15, false);
 
-    // 2. Dynamic Status Banner (Under header)
-    k10.canvas->canvasRectangle(10, 52, 220, 24, 0x1E293B, 0x1E293B, true);
-    k10.canvas->canvasText(statusMessage, 18, 56, statusColor,
-                           k10.canvas->eCNAndENFont16, 26, false);
+    // 2. Status Banner
+    k10.canvas->canvasRectangle(12, 48, 216, 26, 0x18181B, 0x18181B, true);
+    int statusX = 120 - (int)(strlen(statusMessage) * 4);
+    k10.canvas->canvasText(statusMessage, statusX, 53, statusColor,
+                           k10.canvas->eCNAndENFont16, 24, false);
 
-    // 3. Viewfinder Focus Reticle (Center crosshair marks)
+    // 3. Viewfinder Focus Reticle & Corner Framing Brackets
     k10.canvas->canvasLine(110, 160, 130, 160, 0x00E5FF);
     k10.canvas->canvasLine(120, 150, 120, 170, 0x00E5FF);
+    // Framing corners
+    k10.canvas->canvasLine(30, 90, 45, 90, 0x71717A);
+    k10.canvas->canvasLine(30, 90, 30, 105, 0x71717A);
+    k10.canvas->canvasLine(210, 90, 195, 90, 0x71717A);
+    k10.canvas->canvasLine(210, 90, 210, 105, 0x71717A);
+    k10.canvas->canvasLine(30, 230, 45, 230, 0x71717A);
+    k10.canvas->canvasLine(30, 230, 30, 215, 0x71717A);
+    k10.canvas->canvasLine(210, 230, 195, 230, 0x71717A);
+    k10.canvas->canvasLine(210, 230, 210, 215, 0x71717A);
 
-    // 4. Bottom Controls Bar
-    k10.canvas->canvasRectangle(0, 258, 240, 62, 0x000000, 0x000000, true);
-    k10.canvas->canvasText("[A] Capture Photo", 20, 268, 0x00E5FF,
-                           k10.canvas->eCNAndENFont16, 26, false);
-    k10.canvas->canvasText("[B] View Saved Photo", 20, 292, 0x38BDF8,
-                           k10.canvas->eCNAndENFont16, 26, false);
+    // 4. Centered Two-Column Control Bar (Zero-overflow)
+    k10.canvas->canvasRectangle(0, 272, 240, 48, 0x0A0A0A, 0x0A0A0A, true);
+    k10.canvas->canvasLine(0, 272, 240, 272, 0x27272A);
+    k10.canvas->canvasText("[A] Shutter", 22, 286, 0x00E5FF,
+                           k10.canvas->eCNAndENFont16, 12, false);
+    k10.canvas->canvasText("[B] Gallery", 132, 286, 0x38BDF8,
+                           k10.canvas->eCNAndENFont16, 12, false);
 
     k10.canvas->updateCanvas();
 }
 
-// Show the saved photo on canvas with an overlay prompt to return
+// Show the saved photo on canvas
 void showSavedPhoto() {
-    // Temporarily disable live camera feed so photo is visible
     k10.setBgCamerImage(false);
     k10.canvas->canvasClear();
 
-    // Draw the BMP image from SD Card onto the canvas
+    // Draw the BMP image from SD Card
     k10.canvas->canvasDrawImage(0, 0, "S:/photo.bmp");
 
-    // Top & Bottom info badges over the image
-    k10.canvas->canvasRectangle(0, 0, 240, 32, 0x000000, 0x000000, true);
-    k10.canvas->canvasText("PHOTO: S:/photo.bmp", 20, 8, 0xFEE715,
-                           k10.canvas->eCNAndENFont16, 26, false);
+    // Top Header Badge
+    k10.canvas->canvasRectangle(0, 0, 240, 34, 0x000000, 0x000000, true);
+    k10.canvas->canvasText("Saved: S:/photo.bmp", 32, 10, 0xFEE715,
+                           k10.canvas->eCNAndENFont16, 24, false);
 
-    k10.canvas->canvasRectangle(0, 285, 240, 35, 0x000000, 0x000000, true);
-    k10.canvas->canvasText("[A] Return to Camera", 20, 295, 0x00FF88,
-                           k10.canvas->eCNAndENFont16, 26, false);
+    // Bottom Control Badge
+    k10.canvas->canvasRectangle(0, 280, 240, 40, 0x000000, 0x000000, true);
+    k10.canvas->canvasText("[A] Return to Camera", 38, 292, 0x00FF88,
+                           k10.canvas->eCNAndENFont16, 22, false);
 
     k10.canvas->updateCanvas();
 }
@@ -57,67 +114,46 @@ void showSavedPhoto() {
 void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
-    k10.initSDFile();          // Mount SD Card
-    k10.initBgCamerImage();    // Initialize camera sensor
-    k10.creatCanvas();         // Create overlay canvas buffer
+    k10.initSDFile();       // Mount SD Card
+    k10.initBgCamerImage(); // Initialize camera sensor
+    k10.creatCanvas();      // Create overlay canvas buffer
 
-    // Initialize RGB LED (Flash simulator)
     k10.rgb->brightness(5);
     k10.rgb->write(-1, 0x000000);
 
-    // Start live camera stream in the background
+    // Start live camera stream
     k10.setBgCamerImage(true);
 
-    // Initial HUD overlay
-    drawCameraHUD("Mode: Live Viewfinder", 0x00FF88);
+    drawCameraHUD("Lens: Live Viewfinder", 0x10B981);
 }
 
 void loop() {
-    // ==========================================
-    // Button A Action:
-    // - In Live Mode: Snap photo to SD Card
-    // - In Photo View Mode: Return to Live Camera
-    // ==========================================
-    if (k10.buttonA->isPressed()) {
+    // Non-blocking Button A Action (Capture or Return)
+    if (checkButtonAPressed()) {
         if (isViewingPhoto) {
-            // Return to live camera feed
             isViewingPhoto = false;
             k10.setBgCamerImage(true);
-            drawCameraHUD("Mode: Live Viewfinder", 0x00FF88);
+            drawCameraHUD("Lens: Live Viewfinder", 0x10B981);
         } else {
-            // Camera Shutter Flash & Save status
-            k10.rgb->write(-1, 0xFFFFFF); // White shutter flash
-            drawCameraHUD("Capturing photo...", 0xFF4444);
+            // Shutter Flash & Snapshot
+            k10.rgb->write(-1, 0xFFFFFF); // Flash on
+            drawCameraHUD("Capturing frame...", 0xFF4444);
 
-            // Save snapshot to SD Card
             k10.photoSaveToTFCard("S:/photo.bmp");
 
-            delay(200);
-            k10.rgb->write(-1, 0x000000); // Shutter flash off
-            drawCameraHUD("Photo Saved: photo.bmp", 0x00E5FF);
-        }
-
-        // Debounce wait for button release
-        while (k10.buttonA->isPressed()) {
-            delay(50);
+            delay(150);
+            k10.rgb->write(-1, 0x000000); // Flash off
+            drawCameraHUD("Saved: S:/photo.bmp", 0x00E5FF);
         }
     }
 
-    // ==========================================
-    // Button B Action:
-    // - View the captured photo from SD Card
-    // ==========================================
-    else if (k10.buttonB->isPressed()) {
+    // Non-blocking Button B Action (Gallery)
+    if (checkButtonBPressed()) {
         if (!isViewingPhoto) {
             isViewingPhoto = true;
             showSavedPhoto();
         }
-
-        // Debounce wait for button release
-        while (k10.buttonB->isPressed()) {
-            delay(50);
-        }
     }
 
-    delay(20);
+    delay(20); // Responsive loop tick
 }
