@@ -6,6 +6,9 @@ AHT20 aht20;
 
 int activeSensor = 0; // 0 = Temperature (10-45 C), 1 = Light Sensor (0-4000 lux)
 
+const float START_ANGLE = 150.0 * (PI / 180.0);
+const float SWEEP_ANGLE = 240.0 * (PI / 180.0);
+
 // Non-blocking button edge-detection tracker
 bool checkButtonAPressed() {
     static bool lastState = false;
@@ -29,17 +32,15 @@ bool checkButtonAPressed() {
     return pressedEvent;
 }
 
-void drawCircularGauge(int centerX, int centerY, int radius, float value, float minVal, float maxVal, const char* label, const char* unit, uint32_t activeColor) {
-    // 1. Outer dial bezel (Vintage brass/gold trim)
+// 1. Draw static dial bezel and tick marks once
+void drawCircularGaugeStaticChrome(int centerX, int centerY, int radius) {
+    // Outer dial bezel (Vintage brass/gold trim)
     k10.canvas->canvasCircle(centerX, centerY, radius + 8, 0xD4AF37, 0x000000, false);
     k10.canvas->canvasCircle(centerX, centerY, radius, 0x2A2D35, 0x181A1F, true);
 
-    // 2. Dial tick marks
-    float startAngle = 150.0 * (PI / 180.0);
-    float sweepAngle = 240.0 * (PI / 180.0);
-
+    // Dial tick marks
     for (int t = 0; t <= 10; t++) {
-        float theta = startAngle + (t * sweepAngle / 10.0);
+        float theta = START_ANGLE + (t * SWEEP_ANGLE / 10.0);
         int x1 = centerX + (int)(cos(theta) * (radius - 4));
         int y1 = centerY + (int)(sin(theta) * (radius - 4));
         int x2 = centerX + (int)(cos(theta) * (radius - 12));
@@ -47,33 +48,67 @@ void drawCircularGauge(int centerX, int centerY, int radius, float value, float 
 
         k10.canvas->canvasLine(x1, y1, x2, y2, 0x8E94A0);
     }
+}
 
-    // 3. Indicator Needle
-    float constrainedVal = constrain(value, minVal, maxVal);
-    float normVal = (constrainedVal - minVal) / (maxVal - minVal);
-    float needleAngle = startAngle + (normVal * sweepAngle);
+// 2. Update sensor title label and unit string (called only on sensor switch)
+void updateGaugeLabels(int centerX, int centerY, const char* label, const char* unit) {
+    // Clear title label and unit areas with dial background color
+    k10.canvas->canvasRectangle(centerX - 60, centerY - 46, 120, 18, 0x181A1F, 0x181A1F, true);
+    k10.canvas->canvasRectangle(centerX - 40, centerY + 46, 80, 18, 0x181A1F, 0x181A1F, true);
 
-    int needleX = centerX + (int)(cos(needleAngle) * (radius - 16));
-    int needleY = centerY + (int)(sin(needleAngle) * (radius - 16));
-
-    k10.canvas->canvasLine(centerX, centerY, needleX, needleY, activeColor);
-    k10.canvas->canvasLine(centerX + 1, centerY, needleX, needleY, activeColor);
-    k10.canvas->canvasCircle(centerX, centerY, 7, 0xD4AF37, 0xD4AF37, true);
-    k10.canvas->canvasCircle(centerX, centerY, 3, 0x000000, 0x000000, true);
-
-    // 4. Digital Readouts (Centered)
     int labelX = centerX - (int)(strlen(label) * 4);
     k10.canvas->canvasText(label, labelX, centerY - 42, 0xD4AF37,
                            k10.canvas->eCNAndENFont16, 16, false);
 
-    String valStr = String(value, 1);
-    int valX = centerX - (int)(valStr.length() * 7);
-    k10.canvas->canvasText(valStr, valX, centerY + 22, 0xF4EBD9,
-                           k10.canvas->eCNAndENFont24, 8, false);
-
     int unitX = centerX - (int)(strlen(unit) * 4);
     k10.canvas->canvasText(unit, unitX, centerY + 48, 0x64748B,
                            k10.canvas->eCNAndENFont16, 10, false);
+}
+
+// 3. Dynamic Partial Refresh: update ONLY inner dial, needle, pivot, and numeric value
+void updateGaugeNeedleAndValue(int centerX, int centerY, int radius, float value, float minVal, float maxVal, uint32_t activeColor) {
+    // Clear inner dial face (radius - 14) without touching outer tick marks
+    k10.canvas->canvasCircle(centerX, centerY, radius - 14, 0x181A1F, 0x181A1F, true);
+
+    // Clear digital value readout text box
+    k10.canvas->canvasRectangle(centerX - 35, centerY + 20, 70, 24, 0x181A1F, 0x181A1F, true);
+
+    // Calculate indicator needle vector
+    float constrainedVal = constrain(value, minVal, maxVal);
+    float normVal = (constrainedVal - minVal) / (maxVal - minVal);
+    float needleAngle = START_ANGLE + (normVal * SWEEP_ANGLE);
+
+    int needleX = centerX + (int)(cos(needleAngle) * (radius - 16));
+    int needleY = centerY + (int)(sin(needleAngle) * (radius - 16));
+
+    // Draw needle
+    k10.canvas->canvasLine(centerX, centerY, needleX, needleY, activeColor);
+    k10.canvas->canvasLine(centerX + 1, centerY, needleX, needleY, activeColor);
+
+    // Center pivot cap
+    k10.canvas->canvasCircle(centerX, centerY, 7, 0xD4AF37, 0xD4AF37, true);
+    k10.canvas->canvasCircle(centerX, centerY, 3, 0x000000, 0x000000, true);
+
+    // Draw digital readout
+    String valStr = (activeSensor == 0) ? String(value, 1) : String((int)value);
+    int valX = centerX - (int)(valStr.length() * 7);
+    k10.canvas->canvasText(valStr, valX, centerY + 22, 0xF4EBD9,
+                           k10.canvas->eCNAndENFont24, 8, false);
+}
+
+// Render static screen layout (Header banner and bottom prompt bar) once
+void drawScreenChrome() {
+    // 1. Aviator Header Banner
+    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x1B1E24, 0x1B1E24, true);
+    k10.canvas->canvasLine(0, 42, 240, 42, 0xD4AF37);
+    k10.canvas->canvasText("CHRONO DIAL", 52, 10, 0xD4AF37,
+                           k10.canvas->eCNAndENFont24, 15, false);
+
+    // 2. Navigation Controls Bar (Zero-overflow)
+    k10.canvas->canvasLine(15, 276, 225, 276, 0x2A2D35);
+    k10.canvas->canvasRectangle(20, 282, 200, 32, 0x2A2D35, 0x1B1E24, true);
+    k10.canvas->canvasText("[A] Toggle Sensor", 44, 290, 0xD4AF37,
+                           k10.canvas->eCNAndENFont16, 20, false);
 }
 
 void setup() {
@@ -85,40 +120,41 @@ void setup() {
 
     k10.rgb->brightness(5);
     k10.rgb->write(-1, 0xD4AF37); // Chrono Gold glow
+
+    // Initial paint: static chrome + dial frame + initial readings
+    drawScreenChrome();
+    drawCircularGaugeStaticChrome(120, 155, 72);
+    updateGaugeLabels(120, 155, "Temperature", "deg C");
+
+    float tempC = aht20.getData(AHT20::eAHT20TempC);
+    uint32_t needleColor = (tempC > 30.0) ? 0xEF4444 : 0x22C55E;
+    updateGaugeNeedleAndValue(120, 155, 72, tempC, 10.0, 45.0, needleColor);
+
+    k10.canvas->updateCanvas();
 }
 
 void loop() {
-    float tempC = aht20.getData(AHT20::eAHT20TempC);
-    int lightALS = k10.readALS();
-
-    k10.canvas->canvasClear();
-
-    // 1. Aviator Header Banner
-    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x1B1E24, 0x1B1E24, true);
-    k10.canvas->canvasLine(0, 42, 240, 42, 0xD4AF37);
-    k10.canvas->canvasText("CHRONO DIAL", 52, 10, 0xD4AF37,
-                           k10.canvas->eCNAndENFont24, 15, false);
-
-    // 2. Render Circular Gauge based on active sensor
-    if (activeSensor == 0) {
-        uint32_t needleColor = (tempC > 30.0) ? 0xEF4444 : 0x22C55E;
-        drawCircularGauge(120, 155, 72, tempC, 10.0, 45.0, "Temperature", "deg C", needleColor);
-    } else {
-        drawCircularGauge(120, 155, 72, lightALS, 0, 4000, "Ambient Light", "lux", 0x38BDF8);
-    }
-
-    // 3. Navigation Controls Bar (Zero-overflow)
-    k10.canvas->canvasLine(15, 276, 225, 276, 0x2A2D35);
-    k10.canvas->canvasRectangle(20, 282, 200, 32, 0x2A2D35, 0x1B1E24, true);
-    k10.canvas->canvasText("[A] Toggle Sensor", 44, 290, 0xD4AF37,
-                           k10.canvas->eCNAndENFont16, 20, false);
-
-    k10.canvas->updateCanvas();
-
     // Non-blocking Button A: Toggle Active Sensor
     if (checkButtonAPressed()) {
         activeSensor = (activeSensor + 1) % 2;
+        if (activeSensor == 0) {
+            updateGaugeLabels(120, 155, "Temperature", "deg C");
+        } else {
+            updateGaugeLabels(120, 155, "Ambient Light", "lux");
+        }
     }
 
+    // Dynamic Partial Refresh: update ONLY needle and numeric value
+    if (activeSensor == 0) {
+        float tempC = aht20.getData(AHT20::eAHT20TempC);
+        uint32_t needleColor = (tempC > 30.0) ? 0xEF4444 : 0x22C55E;
+        updateGaugeNeedleAndValue(120, 155, 72, tempC, 10.0, 45.0, needleColor);
+    } else {
+        int lightALS = k10.readALS();
+        updateGaugeNeedleAndValue(120, 155, 72, lightALS, 0, 4000, 0x38BDF8);
+    }
+
+    // Flush canvas without full-screen flicker
+    k10.canvas->updateCanvas();
     delay(80); // Responsive loop tick
 }

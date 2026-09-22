@@ -15,6 +15,10 @@ const int totalItems = sizeof(menuItems) / sizeof(menuItems[0]);
 int activeIndex = 0;
 String currentStatus = "Mode: System Ready";
 
+const int START_Y = 54;
+const int CARD_HEIGHT = 34;
+const int CARD_SPACING = 6;
+
 // Non-blocking button edge-detection state trackers
 bool checkButtonAPressed() {
     static bool lastState = false;
@@ -60,82 +64,79 @@ bool checkButtonBPressed() {
     return pressedEvent;
 }
 
-void renderMenu() {
-    k10.canvas->canvasClear();
-    // Synthwave Neon Arcade background
-    k10.setScreenBackground(0x160824);
+// Render individual menu item card component
+void drawMenuCard(int i, bool isFocused) {
+    int cardY = START_Y + i * (CARD_HEIGHT + CARD_SPACING);
 
+    if (isFocused) {
+        // Selected/Focused Card: Neon pink border with cyber turquoise text
+        k10.canvas->canvasRectangle(12, cardY, 216, CARD_HEIGHT, 0xFF007F, 0x361152, true);
+        k10.canvas->canvasText(">", 20, cardY + 8, 0xFFE600,
+                               k10.canvas->eCNAndENFont16, 5, false);
+        k10.canvas->canvasText(menuItems[i], 36, cardY + 8, 0x00F5D4,
+                               k10.canvas->eCNAndENFont16, 22, false);
+    } else {
+        // Unfocused Cards
+        k10.canvas->canvasRectangle(12, cardY, 216, CARD_HEIGHT, 0x3D185F, 0x1E0A32, true);
+        k10.canvas->canvasText(menuItems[i], 28, cardY + 8, 0xA78BFA,
+                               k10.canvas->eCNAndENFont16, 22, false);
+    }
+}
+
+// Render dynamic feedback component only
+void updateStatusBox(const String& status) {
+    k10.canvas->canvasRectangle(12, 226, 216, 34, 0x00F5D4, 0x220C3A, true);
+    k10.canvas->canvasText(status, 22, 234, 0x00F5D4,
+                           k10.canvas->eCNAndENFont16, 24, false);
+}
+
+// Render static chrome (header and bottom navigation guide) once
+void drawStaticChrome() {
     // 1. Header Banner
     k10.canvas->canvasRectangle(0, 0, 240, 44, 0x220C3A, 0x220C3A, true);
     k10.canvas->canvasLine(0, 44, 240, 44, 0xFF007F); // Neon magenta line
     k10.canvas->canvasText("ARCADE HARDWARE", 24, 10, 0xFFE600,
                            k10.canvas->eCNAndENFont24, 16, false);
 
-    // 2. Menu Item Cards
-    int startY = 54;
-    int cardHeight = 34;
-    int spacing = 6;
-
-    for (int i = 0; i < totalItems; i++) {
-        int cardY = startY + i * (cardHeight + spacing);
-
-        if (i == activeIndex) {
-            // Selected/Focused Card: Neon pink border with cyber turquoise text
-            k10.canvas->canvasRectangle(12, cardY, 216, cardHeight, 0xFF007F, 0x361152, true);
-            k10.canvas->canvasText(">", 20, cardY + 8, 0xFFE600,
-                                   k10.canvas->eCNAndENFont16, 5, false);
-            k10.canvas->canvasText(menuItems[i], 36, cardY + 8, 0x00F5D4,
-                                   k10.canvas->eCNAndENFont16, 22, false);
-        } else {
-            // Unfocused Cards
-            k10.canvas->canvasRectangle(12, cardY, 216, cardHeight, 0x3D185F, 0x1E0A32, true);
-            k10.canvas->canvasText(menuItems[i], 28, cardY + 8, 0xA78BFA,
-                                   k10.canvas->eCNAndENFont16, 22, false);
-        }
-    }
-
-    // 3. Active Mode Feedback Card
-    k10.canvas->canvasRectangle(12, 226, 216, 34, 0x00F5D4, 0x220C3A, true);
-    k10.canvas->canvasText(currentStatus, 22, 234, 0x00F5D4,
-                           k10.canvas->eCNAndENFont16, 24, false);
-
-    // 4. Navigation Controls Bar (Zero-overflow 2-column layout)
+    // 2. Navigation Controls Bar (Zero-overflow 2-column layout)
     k10.canvas->canvasLine(12, 272, 228, 272, 0xFF007F);
     k10.canvas->canvasRectangle(12, 276, 216, 34, 0x3D185F, 0x220C3A, true);
     k10.canvas->canvasText("[A] Next", 22, 285, 0x00F5D4,
                            k10.canvas->eCNAndENFont16, 12, false);
     k10.canvas->canvasText("[B] Trigger", 136, 285, 0xFFE600,
                            k10.canvas->eCNAndENFont16, 12, false);
-
-    k10.canvas->updateCanvas();
 }
 
 void executeOption(int index) {
     switch (index) {
         case 0: // Red Alarm
             currentStatus = "Mode: Red Alarm";
-            renderMenu();
+            updateStatusBox(currentStatus);
+            k10.canvas->updateCanvas();
             k10.rgb->write(-1, 0xFF0000);
             music.playTone(880, 200);
             break;
 
         case 1: // Emerald Calm
             currentStatus = "Mode: Emerald Calm";
-            renderMenu();
+            updateStatusBox(currentStatus);
+            k10.canvas->updateCanvas();
             k10.rgb->write(-1, 0x00FF88);
             music.playTone(523, 300);
             break;
 
         case 2: // Cyber Cyan
             currentStatus = "Mode: Cyber Cyan";
-            renderMenu();
+            updateStatusBox(currentStatus);
+            k10.canvas->updateCanvas();
             k10.rgb->write(-1, 0x00E5FF);
             music.playTone(659, 200);
             break;
 
         case 3: // Melodic Fanfare
             currentStatus = "Mode: Melodic";
-            renderMenu();
+            updateStatusBox(currentStatus);
+            k10.canvas->updateCanvas();
             k10.rgb->write(0, 0xFF007F);
             k10.rgb->write(1, 0x00F5D4);
             k10.rgb->write(2, 0xFFE600);
@@ -145,7 +146,8 @@ void executeOption(int index) {
 
         case 4: // Mute & OFF
             currentStatus = "Mode: Systems OFF";
-            renderMenu();
+            updateStatusBox(currentStatus);
+            k10.canvas->updateCanvas();
             k10.rgb->write(-1, 0x000000);
             music.stopPlayTone();
             break;
@@ -156,21 +158,33 @@ void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
     k10.creatCanvas();
+    // Synthwave Neon Arcade background
+    k10.setScreenBackground(0x160824);
 
     k10.rgb->brightness(5);
     k10.rgb->write(-1, 0x00F5D4);
 
-    renderMenu();
+    // Initial full paint: static chrome + all cards + status box
+    drawStaticChrome();
+    for (int i = 0; i < totalItems; i++) {
+        drawMenuCard(i, i == activeIndex);
+    }
+    updateStatusBox(currentStatus);
+    k10.canvas->updateCanvas();
 }
 
 void loop() {
-    // Non-blocking Button A: Navigate to Next Item
+    // Dynamic Partial Refresh on Button A: Update ONLY toggled menu cards
     if (checkButtonAPressed()) {
+        int prevIndex = activeIndex;
         activeIndex = (activeIndex + 1) % totalItems;
-        renderMenu();
+
+        drawMenuCard(prevIndex, false); // Invalidate previous active card
+        drawMenuCard(activeIndex, true); // Highlight newly active card
+        k10.canvas->updateCanvas();
     }
 
-    // Non-blocking Button B: Execute Action
+    // Dynamic Partial Refresh on Button B: Update ONLY status box and execute hardware trigger
     if (checkButtonBPressed()) {
         executeOption(activeIndex);
     }

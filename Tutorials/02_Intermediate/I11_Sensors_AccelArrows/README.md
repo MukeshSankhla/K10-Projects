@@ -18,8 +18,10 @@ Features:
      - Pitch backward: $Y > +300\,mg$
      - Roll left: $X < -300\,mg$
      - Roll right: $X > +300\,mg$
-2. **Vector Arrow Generation**:
+2. **Vector Arrow Generation & Dynamic Partial Refresh**:
    - `drawDirectionArrow(centerX, centerY, direction, color)` calculates the tip and shaft coordinates using thick line segments (`canvasLine`).
+   - The tactical header banner and outer radar frame are drawn once in `setup()` (`drawScreenChrome()`).
+   - In `loop()`, only the inner radar reticle (`updateRadarReticle()`), direction status banner (`updateDirectionBanner()`), and raw accelerometer readout (`updateRawAccel()`) are partially redrawn, eliminating screen flicker.
 
 ---
 
@@ -31,6 +33,7 @@ Features:
 | `k10.getAccelerometerX()` | None | `int` | Reads X-axis acceleration in $mg$. |
 | `k10.getAccelerometerY()` | None | `int` | Reads Y-axis acceleration in $mg$. |
 | `k10.canvas->canvasLine(...)` | Coordinates & color | `void` | Draws vector arrow heads and shafts. |
+| `k10.canvas->updateCanvas()` | None | `void` | Flushes canvas buffer to display. |
 
 ---
 
@@ -76,6 +79,54 @@ void drawDirectionArrow(int centerX, int centerY, int direction, uint32_t color)
     }
 }
 
+// 1. Render static tactical header banner and outer radar frame once
+void drawScreenChrome() {
+    // Tactical Header Banner
+    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x0C1914, 0x0C1914, true);
+    k10.canvas->canvasLine(0, 42, 240, 42, 0x39FF14);
+    k10.canvas->canvasText("TACTICAL RADAR", 30, 10, 0x39FF14,
+                           k10.canvas->eCNAndENFont24, 16, false);
+
+    // Outer Radar Scope Ring
+    k10.canvas->canvasCircle(120, 155, 74, 0x163326, 0x0A1712, true);
+}
+
+// 2. Dynamic Partial Refresh: update ONLY radar reticle and arrow
+void updateRadarReticle(int centerX, int centerY, int direction, uint32_t arrowColor) {
+    // Clear inner scope area (radius 73)
+    k10.canvas->canvasCircle(centerX, centerY, 73, 0x163326, 0x0A1712, true);
+
+    // Redraw concentric range rings
+    k10.canvas->canvasCircle(centerX, centerY, 52, 0x163326, 0x0A1712, false);
+    k10.canvas->canvasCircle(centerX, centerY, 30, 0x163326, 0x0A1712, false);
+
+    // Redraw crosshair lines
+    k10.canvas->canvasLine(centerX, centerY - 70, centerX, centerY + 70, 0x132B20);
+    k10.canvas->canvasLine(centerX - 70, centerY, centerX + 70, centerY, 0x132B20);
+
+    // Draw active directional arrow
+    drawDirectionArrow(centerX, centerY, direction, arrowColor);
+}
+
+// 3. Dynamic Partial Refresh: update ONLY direction status banner
+void updateDirectionBanner(const String& dirLabel, uint32_t arrowColor) {
+    k10.canvas->canvasRectangle(24, 242, 192, 32, arrowColor, 0x0C1914, true);
+    int labelX = 120 - (int)(dirLabel.length() * 4);
+    k10.canvas->canvasText(dirLabel, labelX, 250, arrowColor,
+                           k10.canvas->eCNAndENFont16, 20, false);
+}
+
+// 4. Dynamic Partial Refresh: update ONLY raw accelerometer readout
+void updateRawAccel(int accX, int accY) {
+    // Clear raw accel text area
+    k10.canvas->canvasRectangle(20, 288, 200, 22, 0x060D0A, 0x060D0A, true);
+
+    String rawStr = "X: " + String(accX) + "  Y: " + String(accY);
+    int rawX = 120 - (int)(rawStr.length() * 4);
+    k10.canvas->canvasText(rawStr, rawX, 290, 0x64748B,
+                           k10.canvas->eCNAndENFont16, 22, false);
+}
+
 void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
@@ -85,6 +136,13 @@ void setup() {
 
     k10.rgb->brightness(5);
     k10.rgb->write(-1, 0x39FF14); // Radar phosphor green
+
+    // Initial paint: static chrome + initial reticle and text
+    drawScreenChrome();
+    updateRadarReticle(120, 155, 0, 0x39FF14);
+    updateDirectionBanner("Level (Centered)", 0x39FF14);
+    updateRawAccel(0, 0);
+    k10.canvas->updateCanvas();
 }
 
 void loop() {
@@ -114,37 +172,12 @@ void loop() {
         arrowColor = 0xFF007F;
     }
 
-    k10.canvas->canvasClear();
+    // Dynamic Partial Refresh: update ONLY reticle, banner, and raw text
+    updateRadarReticle(120, 155, direction, arrowColor);
+    updateDirectionBanner(dirLabel, arrowColor);
+    updateRawAccel(accX, accY);
 
-    // 1. Tactical Header Banner
-    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x0C1914, 0x0C1914, true);
-    k10.canvas->canvasLine(0, 42, 240, 42, 0x39FF14);
-    k10.canvas->canvasText("TACTICAL RADAR", 30, 10, 0x39FF14,
-                           k10.canvas->eCNAndENFont24, 16, false);
-
-    // 2. Radar Scope Compass Rings
-    k10.canvas->canvasCircle(120, 155, 74, 0x163326, 0x0A1712, true);
-    k10.canvas->canvasCircle(120, 155, 52, 0x163326, 0x0A1712, false);
-    k10.canvas->canvasCircle(120, 155, 30, 0x163326, 0x0A1712, false);
-    // Crosshair reference lines
-    k10.canvas->canvasLine(120, 85, 120, 225, 0x132B20);
-    k10.canvas->canvasLine(50, 155, 190, 155, 0x132B20);
-
-    // Render Dynamic Arrow
-    drawDirectionArrow(120, 155, direction, arrowColor);
-
-    // 3. Direction readout banner (Properly centered, 192px wide)
-    k10.canvas->canvasRectangle(24, 242, 192, 32, arrowColor, 0x0C1914, true);
-    int labelX = 120 - (int)(dirLabel.length() * 4);
-    k10.canvas->canvasText(dirLabel, labelX, 250, arrowColor,
-                           k10.canvas->eCNAndENFont16, 20, false);
-
-    // 4. Raw Accel Readout (Centered)
-    String rawStr = "X: " + String(accX) + "  Y: " + String(accY);
-    int rawX = 120 - (int)(rawStr.length() * 4);
-    k10.canvas->canvasText(rawStr, rawX, 290, 0x64748B,
-                           k10.canvas->eCNAndENFont16, 22, false);
-
+    // Flush canvas without full-screen flicker
     k10.canvas->updateCanvas();
     delay(50);
 }

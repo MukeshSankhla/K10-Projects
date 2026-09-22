@@ -18,8 +18,9 @@ Features:
    - Needle tip coordinates are determined by:
      $$x = \text{centerX} + r \cdot \cos(\theta)$$
      $$y = \text{centerY} + r \cdot \sin(\theta)$$
-2. **Double-Buffered Rendering**:
-   - The entire gauge, ticks, needle, and typography are rendered to the RAM canvas before updating the screen.
+2. **Dynamic Partial Refresh Architecture**:
+   - The outer bezel ring, dial background face, all 13 angular tick marks, unit label, and header/footer chrome are drawn once during `setup()` (`drawScreenChrome()`).
+   - The 30ms animation loop performs a targeted partial redraw: it only clears the inner dial face (`radius - 14`) and digital readout box (`updateCircularGaugeNeedle()`), leaving the surrounding ticks, bezel, and chrome intact without screen flicker.
 
 ---
 
@@ -27,8 +28,8 @@ Features:
 
 | API / Method | Arguments | Return Type | Description |
 | :--- | :--- | :--- | :--- |
-| `k10.canvas->canvasCircle(...)` | Center, radius, colors, fill | `void` | Renders dial bezel and pivot cap. |
-| `k10.canvas->canvasLine(...)` | Coordinates & color | `void` | Renders radial ticks and rotating needle. |
+| `k10.canvas->canvasCircle(...)` | Center, radius, colors, fill | `void` | Renders dial bezel, clears inner face, and renders pivot cap. |
+| `k10.canvas->canvasLine(...)` | Coordinates & color | `void` | Renders radial ticks, dividers, and rotating needle. |
 | `k10.canvas->canvasText(...)` | Text, coordinates, color, font | `void` | Renders numerical speed and unit labels. |
 
 ---
@@ -41,21 +42,21 @@ Features:
 UNIHIKER_K10 k10;
 uint8_t screen_dir = 2; // Portrait orientation (240x320)
 
-// Helper to draw a circular dial speedometer gauge
-void drawCircularGauge(int centerX, int centerY, int radius, int value, int minVal, int maxVal, const char* unit, uint32_t activeColor) {
-    // 1. Outer dial bezel ring (Supercar aluminum trim)
+const float START_ANGLE = 150.0 * (PI / 180.0);
+const float SWEEP_ANGLE = 240.0 * (PI / 180.0);
+
+// 1. Draw static dial chrome (bezel rings, face background, tick scale, unit) once
+void drawCircularGaugeStaticChrome(int centerX, int centerY, int radius, const char* unit) {
+    // Outer dial bezel ring (Supercar aluminum trim)
     k10.canvas->canvasCircle(centerX, centerY, radius + 8, 0x475569, 0x000000, false);
     k10.canvas->canvasCircle(centerX, centerY, radius + 7, 0x1E293B, 0x000000, false);
 
-    // 2. Dial face background
+    // Dial face background
     k10.canvas->canvasCircle(centerX, centerY, radius, 0x1E293B, 0x111317, true);
 
-    // 3. Draw tick marks around 240-degree arc (from 150 deg to 390 deg)
-    float startAngle = 150.0 * (PI / 180.0);
-    float sweepAngle = 240.0 * (PI / 180.0);
-
+    // Draw tick marks around 240-degree arc (from 150 deg to 390 deg)
     for (int t = 0; t <= 12; t++) {
-        float theta = startAngle + (t * sweepAngle / 12.0);
+        float theta = START_ANGLE + (t * SWEEP_ANGLE / 12.0);
         int x1 = centerX + (int)(cos(theta) * (radius - 4));
         int y1 = centerY + (int)(sin(theta) * (radius - 4));
         int x2 = centerX + (int)(cos(theta) * (radius - 12));
@@ -65,10 +66,24 @@ void drawCircularGauge(int centerX, int centerY, int radius, int value, int minV
         k10.canvas->canvasLine(x1, y1, x2, y2, tickColor);
     }
 
-    // 4. Draw Indicator Needle
+    // Static Unit Label below dial center
+    int unitX = centerX - (int)(strlen(unit) * 4);
+    k10.canvas->canvasText(unit, unitX, centerY + 50, 0xFACC15,
+                           k10.canvas->eCNAndENFont16, 10, false);
+}
+
+// 2. Dynamic Partial Refresh: update ONLY inner dial face, needle, pivot cap, and digital readout
+void updateCircularGaugeNeedle(int centerX, int centerY, int radius, int value, int minVal, int maxVal, uint32_t activeColor) {
+    // Clear inner dial face (radius - 14) without touching ticks (at radius - 12) or outer bezel
+    k10.canvas->canvasCircle(centerX, centerY, radius - 14, 0x111317, 0x111317, true);
+
+    // Clear digital readout text region
+    k10.canvas->canvasRectangle(centerX - 30, centerY + 22, 60, 24, 0x111317, 0x111317, true);
+
+    // Calculate indicator needle vector
     int constrainedVal = constrain(value, minVal, maxVal);
     float normVal = (float)(constrainedVal - minVal) / (float)(maxVal - minVal);
-    float needleAngle = startAngle + (normVal * sweepAngle);
+    float needleAngle = START_ANGLE + (normVal * SWEEP_ANGLE);
 
     int needleX = centerX + (int)(cos(needleAngle) * (radius - 16));
     int needleY = centerY + (int)(sin(needleAngle) * (radius - 16));
@@ -82,15 +97,28 @@ void drawCircularGauge(int centerX, int centerY, int radius, int value, int minV
     k10.canvas->canvasCircle(centerX, centerY, 8, 0xFACC15, 0xFACC15, true);
     k10.canvas->canvasCircle(centerX, centerY, 4, 0x000000, 0x000000, true);
 
-    // 5. Digital Readout below pivot (Properly centered)
+    // Digital Readout below pivot
     String valStr = String(value);
     int textX = centerX - (int)(valStr.length() * 7);
     k10.canvas->canvasText(valStr, textX, centerY + 24, 0xF8FAFC,
                            k10.canvas->eCNAndENFont24, 8, false);
+}
 
-    int unitX = centerX - (int)(strlen(unit) * 4);
-    k10.canvas->canvasText(unit, unitX, centerY + 50, 0xFACC15,
-                           k10.canvas->eCNAndENFont16, 10, false);
+// Render static screen layout (Header banner and footer telemetry) once
+void drawScreenChrome() {
+    // 1. Cockpit Header Banner
+    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x181A20, 0x181A20, true);
+    k10.canvas->canvasLine(0, 42, 240, 42, 0xEF4444); // Racing red line
+    k10.canvas->canvasText("SPEEDOMETER", 46, 10, 0xF8FAFC,
+                           k10.canvas->eCNAndENFont24, 15, false);
+
+    // 2. Dial Gauge Static Scale and Trim
+    drawCircularGaugeStaticChrome(120, 155, 72, "KM / H");
+
+    // 3. Centered Cockpit Footer (Zero-overflow)
+    k10.canvas->canvasLine(15, 276, 225, 276, 0x27272A);
+    k10.canvas->canvasText("Cockpit Velocity Dial", 36, 290, 0x94A3B8,
+                           k10.canvas->eCNAndENFont16, 24, false);
 }
 
 int gaugeVal = 20;
@@ -105,26 +133,19 @@ void setup() {
 
     k10.rgb->brightness(5);
     k10.rgb->write(-1, 0xEF4444);
+
+    // Initial paint: static chrome + initial needle state
+    drawScreenChrome();
+    updateCircularGaugeNeedle(120, 155, 72, gaugeVal, 0, 100, 0x00E5FF);
+    k10.canvas->updateCanvas();
 }
 
 void loop() {
-    k10.canvas->canvasClear();
-
-    // 1. Cockpit Header Banner
-    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x181A20, 0x181A20, true);
-    k10.canvas->canvasLine(0, 42, 240, 42, 0xEF4444); // Racing red line
-    k10.canvas->canvasText("SPEEDOMETER", 46, 10, 0xF8FAFC,
-                           k10.canvas->eCNAndENFont24, 15, false);
-
-    // 2. Render Main Dial Gauge
+    // Dynamic Partial Refresh: update ONLY the needle, pivot, and digital readout
     uint32_t needleColor = (gaugeVal > 80) ? 0xEF4444 : ((gaugeVal > 50) ? 0xFACC15 : 0x00E5FF);
-    drawCircularGauge(120, 155, 72, gaugeVal, 0, 100, "KM / H", needleColor);
+    updateCircularGaugeNeedle(120, 155, 72, gaugeVal, 0, 100, needleColor);
 
-    // 3. Centered Cockpit Footer (Zero-overflow)
-    k10.canvas->canvasLine(15, 276, 225, 276, 0x27272A);
-    k10.canvas->canvasText("Cockpit Velocity Dial", 36, 290, 0x94A3B8,
-                           k10.canvas->eCNAndENFont16, 24, false);
-
+    // Push updated canvas without any screen flicker
     k10.canvas->updateCanvas();
 
     gaugeVal += gaugeSpeed;
