@@ -39,18 +39,20 @@ Features:
 UNIHIKER_K10 k10;
 uint8_t screen_dir = 2; // Portrait orientation (240x320)
 
-// Helper to draw a modern linear level gauge
+// Helper to draw a modern SCADA industrial linear gauge
 void drawLinearGauge(int x, int y, int width, int height, int value, int minVal, int maxVal, const char* label, uint32_t barColor) {
-    // 1. Label and numeric readout
-    k10.canvas->canvasText(label, x, y - 24, 0xFEE715,
-                           k10.canvas->eCNAndENFont16, 20, false);
+    // 1. Label on the left
+    k10.canvas->canvasText(label, x, y - 20, 0xF1F5F9,
+                           k10.canvas->eCNAndENFont16, 18, false);
 
+    // Dynamic right-aligned percentage readout
     String valStr = String(value) + "%";
-    k10.canvas->canvasText(valStr, x + width - 40, y - 24, 0x00E5FF,
-                           k10.canvas->eCNAndENFont16, 10, false);
+    int readoutX = x + width - (int)(valStr.length() * 8);
+    k10.canvas->canvasText(valStr, readoutX, y - 20, barColor,
+                           k10.canvas->eCNAndENFont16, 8, false);
 
     // 2. Gauge Track Background & Border
-    k10.canvas->canvasRectangle(x, y, width, height, 0x334155, 0x111827, true);
+    k10.canvas->canvasRectangle(x, y, width, height, 0x334155, 0x131C24, true);
 
     // 3. Filled Bar Indicator
     int constrainedVal = constrain(value, minVal, maxVal);
@@ -63,7 +65,7 @@ void drawLinearGauge(int x, int y, int width, int height, int value, int minVal,
     // 4. Tick marks along bottom
     for (int t = 0; t <= 4; t++) {
         int tickX = x + (t * (width - 1) / 4);
-        k10.canvas->canvasLine(tickX, y + height, tickX, y + height + 5, 0x64748B);
+        k10.canvas->canvasLine(tickX, y + height, tickX, y + height + 4, 0x475569);
     }
 }
 
@@ -74,7 +76,8 @@ void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
     k10.creatCanvas();
-    k10.setScreenBackground(0x0F172A);
+    // Cyber-Industrial SCADA theme
+    k10.setScreenBackground(0x0C1217);
 
     k10.rgb->brightness(5);
     k10.rgb->write(-1, 0x00E5FF);
@@ -83,21 +86,27 @@ void setup() {
 void loop() {
     k10.canvas->canvasClear();
 
-    // Header
-    k10.canvas->canvasText("LINEAR GAUGE", 42, 14, 0xFEE715,
-                           k10.canvas->eCNAndENFont24, 20, false);
-    k10.canvas->canvasLine(15, 44, 225, 44, 0x334155);
+    // 1. SCADA Header Banner
+    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x131D24, 0x131D24, true);
+    k10.canvas->canvasLine(0, 42, 240, 42, 0x0284C7);
+    k10.canvas->canvasText("SCADA GAUGES", 48, 10, 0x38BDF8,
+                           k10.canvas->eCNAndENFont24, 15, false);
 
-    // Gauge 1: Cyan Progress Level
-    drawLinearGauge(20, 90, 200, 24, demoPercent, 0, 100, "Progress Level", 0x00E5FF);
+    // 2. Gauge 1: Hydraulic Pressure (Cyan)
+    drawLinearGauge(20, 84, 200, 22, demoPercent, 0, 100, "Hydraulic Line", 0x00E5FF);
 
-    // Gauge 2: Thermal Level (Color shifting with percentage)
-    uint32_t tempColor = (demoPercent > 75) ? 0xFF4444 : ((demoPercent > 40) ? 0xFEE715 : 0x00FF88);
-    drawLinearGauge(20, 170, 200, 24, demoPercent, 0, 100, "Thermal Monitor", tempColor);
+    // 3. Gauge 2: Core Thermal Monitor (Dynamic color: Green -> Amber -> Red)
+    uint32_t tempColor = (demoPercent > 75) ? 0xEF4444 : ((demoPercent > 45) ? 0xF59E0B : 0x10B981);
+    drawLinearGauge(20, 154, 200, 22, demoPercent, 0, 100, "Core Temp", tempColor);
 
-    // Gauge 3: Inverted Battery Level
+    // 4. Gauge 3: Inverted Battery Storage (Amber/Blue)
     int batteryLevel = 100 - demoPercent;
-    drawLinearGauge(20, 245, 200, 20, batteryLevel, 0, 100, "Battery Storage", 0x38BDF8);
+    drawLinearGauge(20, 224, 200, 20, batteryLevel, 0, 100, "Storage Bank", 0x38BDF8);
+
+    // 5. Centered Footer Bus Status
+    k10.canvas->canvasLine(15, 276, 225, 276, 0x1E293B);
+    k10.canvas->canvasText("Telemetry Bus: Active", 36, 290, 0x64748B,
+                           k10.canvas->eCNAndENFont16, 24, false);
 
     k10.canvas->updateCanvas();
 

@@ -47,58 +47,85 @@ unsigned long lastStepTime = 0;
 const int STEP_THRESHOLD = 1150; // Threshold above standard 1000mg 1G gravity
 const unsigned long MIN_STEP_INTERVAL = 300; // Minimum 300ms between human steps
 
+// Non-blocking button edge-detection tracker
+bool checkButtonAPressed() {
+    static bool lastState = false;
+    static unsigned long lastDebounceTime = 0;
+    bool reading = k10.buttonA->isPressed();
+    bool pressedEvent = false;
+
+    if (reading != lastState) {
+        lastDebounceTime = millis();
+    }
+    if ((millis() - lastDebounceTime) > 35) {
+        static bool stableState = false;
+        if (reading != stableState) {
+            stableState = reading;
+            if (stableState) {
+                pressedEvent = true;
+            }
+        }
+    }
+    lastState = reading;
+    return pressedEvent;
+}
+
 void renderPedometerUI() {
     k10.canvas->canvasClear();
-    k10.setScreenBackground(0x0F172A);
+    // Pitch Black Athletic theme background
+    k10.setScreenBackground(0x000000);
 
-    // 1. Header
-    k10.canvas->canvasText("SMART PEDOMETER", 18, 14, 0xFEE715,
-                           k10.canvas->eCNAndENFont24, 20, false);
-    k10.canvas->canvasLine(15, 44, 225, 44, 0x334155);
+    // 1. Fitness Header Banner
+    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x111317, 0x111317, true);
+    k10.canvas->canvasLine(0, 42, 240, 42, 0xA6FF00); // Activity neon lime line
+    k10.canvas->canvasText("SMART PEDOMETER", 22, 10, 0xA6FF00,
+                           k10.canvas->eCNAndENFont24, 16, false);
 
-    // 2. Large Central Step Count Card
-    k10.canvas->canvasRectangle(15, 55, 210, 110, 0x38BDF8, 0x1E293B, true);
-    k10.canvas->canvasText("TOTAL STEPS", 65, 68, 0x94A3B8,
-                           k10.canvas->eCNAndENFont16, 20, false);
+    // 2. Large Central Step Count Pod
+    k10.canvas->canvasRectangle(14, 52, 212, 105, 0x1E222A, 0x0F1115, true);
+    k10.canvas->canvasText("TOTAL STEPS", 72, 64, 0x94A3B8,
+                           k10.canvas->eCNAndENFont16, 15, false);
 
     String stepStr = String(stepCount);
-    // Center alignment approximation
-    int textX = 120 - (stepStr.length() * 7);
-    k10.canvas->canvasText(stepStr, textX, 105, 0x00FF88,
-                           k10.canvas->eCNAndENFont24, 15, false);
+    int textX = 120 - (int)(stepStr.length() * 7);
+    k10.canvas->canvasText(stepStr, textX, 98, 0xA6FF00,
+                           k10.canvas->eCNAndENFont24, 12, false);
 
-    // 3. Secondary Metrics Grid
+    // 3. Symmetrical Secondary Metric Pods (w=100, Left=14, Right=126)
     // Distance (0.75m per step average)
     float distanceKm = (stepCount * 0.75) / 1000.0;
     String distStr = String(distanceKm, 2) + " km";
-    k10.canvas->canvasRectangle(15, 175, 100, 65, 0x334155, 0x1E293B, true);
-    k10.canvas->canvasText("Distance", 30, 185, 0x94A3B8,
+    k10.canvas->canvasRectangle(14, 166, 100, 64, 0x1E222A, 0x0F1115, true);
+    k10.canvas->canvasText("Distance", 34, 174, 0x94A3B8,
                            k10.canvas->eCNAndENFont16, 10, false);
-    k10.canvas->canvasText(distStr, 25, 210, 0x00E5FF,
+    int distX = 64 - (int)(distStr.length() * 4);
+    k10.canvas->canvasText(distStr, distX, 200, 0x00D2FF,
                            k10.canvas->eCNAndENFont16, 12, false);
 
     // Estimated Calories (0.04 kcal per step)
     float calories = stepCount * 0.04;
     String calStr = String((int)calories) + " kcal";
-    k10.canvas->canvasRectangle(125, 175, 100, 65, 0x334155, 0x1E293B, true);
-    k10.canvas->canvasText("Calories", 140, 185, 0x94A3B8,
+    k10.canvas->canvasRectangle(126, 166, 100, 64, 0x1E222A, 0x0F1115, true);
+    k10.canvas->canvasText("Calories", 146, 174, 0x94A3B8,
                            k10.canvas->eCNAndENFont16, 10, false);
-    k10.canvas->canvasText(calStr, 135, 210, 0xFEE715,
+    int calX = 176 - (int)(calStr.length() * 4);
+    k10.canvas->canvasText(calStr, calX, 200, 0xFF334B,
                            k10.canvas->eCNAndENFont16, 12, false);
 
     // 4. Live G-Force Motion Bar
     int strength = k10.getStrength();
-    int barWidth = map(constrain(strength, 800, 1600), 800, 1600, 0, 206);
-    k10.canvas->canvasRectangle(15, 250, 210, 14, 0x334155, 0x111827, true);
-    uint32_t barColor = (strength > STEP_THRESHOLD) ? 0x00FF88 : 0x38BDF8;
+    int barWidth = map(constrain(strength, 800, 1600), 800, 1600, 0, 208);
+    k10.canvas->canvasRectangle(14, 240, 212, 14, 0x1E222A, 0x0A0B0D, true);
+    uint32_t barColor = (strength > STEP_THRESHOLD) ? 0xA6FF00 : 0x00D2FF;
     if (barWidth > 0) {
-        k10.canvas->canvasRectangle(17, 252, barWidth, 10, barColor, barColor, true);
+        k10.canvas->canvasRectangle(16, 242, barWidth, 10, barColor, barColor, true);
     }
 
-    // 5. Footer Reset Prompt
-    k10.canvas->canvasLine(15, 275, 225, 275, 0x334155);
-    k10.canvas->canvasText("Press [A] to Reset Counter", 20, 288, 0x64748B,
-                           k10.canvas->eCNAndENFont16, 26, false);
+    // 5. Centered Reset Button Prompt (Zero-overflow)
+    k10.canvas->canvasLine(15, 274, 225, 274, 0x1E222A);
+    k10.canvas->canvasRectangle(20, 280, 200, 32, 0x1E222A, 0x111317, true);
+    k10.canvas->canvasText("[A] Reset Counter", 48, 288, 0xA6FF00,
+                           k10.canvas->eCNAndENFont16, 20, false);
 
     k10.canvas->updateCanvas();
 }
@@ -107,10 +134,9 @@ void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
     k10.creatCanvas();
-    k10.setScreenBackground(0x0F172A);
 
     k10.rgb->brightness(5);
-    k10.rgb->write(-1, 0x00FF88);
+    k10.rgb->write(-1, 0xA6FF00); // Activity Lime glow
 
     renderPedometerUI();
 }
@@ -131,15 +157,12 @@ void loop() {
         isHigh = false;
     }
 
-    // Button A resets counter
-    if (k10.buttonA->isPressed()) {
+    // Non-blocking Button A: Reset Step Counter
+    if (checkButtonAPressed()) {
         stepCount = 0;
         renderPedometerUI();
-        while (k10.buttonA->isPressed()) {
-            delay(50);
-        }
     }
 
-    delay(20);
+    delay(20); // Responsive loop tick
 }
 ```

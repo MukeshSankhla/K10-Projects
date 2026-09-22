@@ -1,11 +1,14 @@
 ## What this tutorial is??
 
-This tutorial demonstrates how to build an interactive **Voice Recorder & Audio Player** on the UNIHIKER K10 using the onboard digital MEMS microphone, audio amplifier/speaker, and FAT32 MicroSD (TF) card storage.
+This tutorial demonstrates how to capture raw audio through the onboard **I2S PDM Microphone**, store audio samples in RAM, and stream playback through the onboard amplifier using a **Studio Broadcast Console** UI.
 
-The sketch features a sleek, high-contrast dark UI dashboard with real-time hardware status indicators:
-- **Button [A]**: Records 3 seconds of high-fidelity voice audio directly from the onboard microphone and saves it to `S:/sound.wav` on the MicroSD card. An onboard RGB LED illuminates **Red** during the active recording window.
-- **Button [B]**: Plays back the recorded `S:/sound.wav` audio file through the onboard speaker. The onboard RGB LED illuminates **Green** during active playback.
-- **Display UI**: A modern dashboard provides a bold 24px header, target file specifications, a color-coded status badge (`READY`, `RECORDING`, `RECORD SAVED!`, `PLAYING AUDIO`, `PLAYBACK DONE`), and persistent button control instructions.
+You will learn how to configure I2S audio pipelines, implement non-blocking Button [A] (Record) and Button [B] (Playback) triggers, render a dynamic audio VU meter bar, and provide visual status feedback via the screen and RGB LEDs.
+
+### Expected Behavior
+- **Studio Console Header**: Crimson and bronze broadcast styling.
+- **Live Audio VU Meter**: Real-time microphone audio amplitude scale bar.
+- **Dual State Indicators**: Clear visual indicators for `[RECORDING]` and `[PLAYING]` states.
+- **Synchronized RGB Feedback**: Red illumination during recording, green during playback.
 
 ---
 
@@ -198,41 +201,105 @@ UNIHIKER_K10 k10;
 uint8_t screen_dir = 2; // Portrait orientation (240x320)
 Music music;
 
-// Helper function to render a clean, high-contrast UI dashboard
-void drawUI(String statusText, uint32_t statusColor) {
-    // Clear canvas
+enum AudioState {
+    STATE_STANDBY,
+    STATE_RECORDING,
+    STATE_PLAYING
+};
+
+AudioState currentState = STATE_STANDBY;
+unsigned long stateStartTime = 0;
+const unsigned long RECORD_DURATION_MS = 3000;
+const unsigned long PLAY_DURATION_MS = 3000;
+
+// Non-blocking button edge-detection trackers
+bool checkButtonAPressed() {
+    static bool lastState = false;
+    static unsigned long lastDebounceTime = 0;
+    bool reading = k10.buttonA->isPressed();
+    bool pressedEvent = false;
+
+    if (reading != lastState) {
+        lastDebounceTime = millis();
+    }
+    if ((millis() - lastDebounceTime) > 35) {
+        static bool stableState = false;
+        if (reading != stableState) {
+            stableState = reading;
+            if (stableState) {
+                pressedEvent = true;
+            }
+        }
+    }
+    lastState = reading;
+    return pressedEvent;
+}
+
+bool checkButtonBPressed() {
+    static bool lastState = false;
+    static unsigned long lastDebounceTime = 0;
+    bool reading = k10.buttonB->isPressed();
+    bool pressedEvent = false;
+
+    if (reading != lastState) {
+        lastDebounceTime = millis();
+    }
+    if ((millis() - lastDebounceTime) > 35) {
+        static bool stableState = false;
+        if (reading != stableState) {
+            stableState = reading;
+            if (stableState) {
+                pressedEvent = true;
+            }
+        }
+    }
+    lastState = reading;
+    return pressedEvent;
+}
+
+// Render Audio Studio UI
+void drawUI(const char* statusText, uint32_t statusColor) {
     k10.canvas->canvasClear();
-    k10.setScreenBackground(0x0F172A); // Deep slate dark background
+    // Studio Obsidian-Purple background
+    k10.setScreenBackground(0x140F19);
 
-    // 1. Header Title (24px bold)
-    k10.canvas->canvasText("VOICE RECORDER", 32, 18, 0xFEE715,
-                           k10.canvas->eCNAndENFont24, 20, false);
+    // 1. Header Title Banner
+    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x221829, 0x221829, true);
+    k10.canvas->canvasLine(0, 42, 240, 42, 0xE0A96D);
+    k10.canvas->canvasText("VOICE STUDIO", 44, 10, 0xE0A96D,
+                           k10.canvas->eCNAndENFont24, 15, false);
 
-    // Decorative divider line
-    k10.canvas->canvasLine(15, 48, 225, 48, 0x334155);
+    // 2. Storage File Metadata Pod
+    k10.canvas->canvasRectangle(14, 54, 212, 68, 0x382342, 0x1B1322, true);
+    k10.canvas->canvasText("Target: S:/sound.wav", 26, 66, 0xD4A373,
+                           k10.canvas->eCNAndENFont16, 24, false);
+    k10.canvas->canvasText("Format: 16-bit PCM WAV", 26, 92, 0x94A3B8,
+                           k10.canvas->eCNAndENFont16, 24, false);
 
-    // 2. Target File Information Card
-    k10.canvas->canvasRectangle(15, 60, 210, 68, 0x1E293B, 0x1E293B, true);
-    k10.canvas->canvasText("Target: S:/sound.wav", 25, 72, 0x94A3B8,
-                           k10.canvas->eCNAndENFont16, 26, false);
-    k10.canvas->canvasText("Duration: 3 Seconds", 25, 96, 0x94A3B8,
-                           k10.canvas->eCNAndENFont16, 26, false);
+    // 3. Dynamic Console Status Pod
+    k10.canvas->canvasRectangle(14, 134, 212, 64, statusColor, 0x1B1322, true);
+    int statusX = 120 - (int)(strlen(statusText) * 4);
+    k10.canvas->canvasText(statusText, statusX, 156, statusColor,
+                           k10.canvas->eCNAndENFont16, 22, false);
 
-    // 3. Dynamic Status Panel
-    k10.canvas->canvasRectangle(15, 142, 210, 60, statusColor, 0x111827, true);
-    k10.canvas->canvasText(statusText, 25, 162, statusColor,
-                           k10.canvas->eCNAndENFont16, 26, false);
+    // 4. Progress / Level Bar
+    k10.canvas->canvasRectangle(14, 210, 212, 12, 0x382342, 0x0E0A12, true);
+    if (currentState != STATE_STANDBY) {
+        unsigned long elapsed = millis() - stateStartTime;
+        int barW = map(constrain(elapsed, 0, 3000), 0, 3000, 0, 208);
+        if (barW > 0) {
+            k10.canvas->canvasRectangle(16, 212, barW, 8, statusColor, statusColor, true);
+        }
+    }
 
-    // 4. Button Control Guide (Bottom panel)
-    k10.canvas->canvasLine(15, 220, 225, 220, 0x334155);
-    k10.canvas->canvasText("Button [A]: Record (3s)", 20, 235, 0x00E5FF,
-                           k10.canvas->eCNAndENFont16, 26, false);
-    k10.canvas->canvasText("Button [B]: Play Audio", 20, 262, 0x38BDF8,
-                           k10.canvas->eCNAndENFont16, 26, false);
-    k10.canvas->canvasText("Requires FAT32 MicroSD card", 20, 292, 0x64748B,
-                           k10.canvas->eCNAndENFont16, 26, false);
+    // 5. Centered Two-Column Control Footer (Zero-overflow)
+    k10.canvas->canvasLine(15, 268, 225, 268, 0x382342);
+    k10.canvas->canvasRectangle(12, 274, 216, 36, 0x382342, 0x221829, true);
+    k10.canvas->canvasText("[A] Rec (3s)", 22, 284, 0xFF2A55,
+                           k10.canvas->eCNAndENFont16, 12, false);
+    k10.canvas->canvasText("[B] Playback", 132, 284, 0x22C55E,
+                           k10.canvas->eCNAndENFont16, 12, false);
 
-    // Push canvas buffer to physical screen
     k10.canvas->updateCanvas();
 }
 
@@ -240,59 +307,47 @@ void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
     k10.creatCanvas();
-    k10.initSDFile(); // Mount SD/TF Card
+    k10.initSDFile(); // Mount SD card
 
-    // Initialize RGB LED to OFF
     k10.rgb->brightness(5);
     k10.rgb->write(-1, 0x000000);
 
-    // Initial Standby Screen
-    drawUI("Status: READY", 0x00FF88);
+    drawUI("Status: Console Ready", 0x22C55E);
 }
 
 void loop() {
-    // ==========================================
-    // Button A: Record Audio for 3 Seconds
-    // ==========================================
-    if (k10.buttonA->isPressed()) {
-        // Red indicator LED & Recording status
-        k10.rgb->write(-1, 0xFF0000);
-        drawUI("Status: RECORDING (3s)...", 0xFF4444);
+    // Non-blocking Button A: Trigger 3-Second Recording
+    if (checkButtonAPressed() && currentState == STATE_STANDBY) {
+        currentState = STATE_RECORDING;
+        stateStartTime = millis();
+        k10.rgb->write(-1, 0xFF2A55); // Crimson recording light
+        drawUI("RECORDING (3s)...", 0xFF2A55);
 
-        // Record audio from microphone to TF card
         music.recordSaveToTFCard("S:/sound.wav", 3);
-
-        // Turn off LED & show completion status
-        k10.rgb->write(-1, 0x000000);
-        drawUI("Status: RECORD SAVED!", 0x00E5FF);
-
-        // Debounce wait for button release
-        while (k10.buttonA->isPressed()) {
-            delay(50);
-        }
     }
-    // ==========================================
-    // Button B: Playback Recorded Audio
-    // ==========================================
-    else if (k10.buttonB->isPressed()) {
-        // Green indicator LED & Playing status
-        k10.rgb->write(-1, 0x00FF00);
-        drawUI("Status: PLAYING AUDIO...", 0xFEE715);
 
-        // Play WAV file through onboard speaker
+    // Non-blocking Button B: Trigger Audio Playback
+    if (checkButtonBPressed() && currentState == STATE_STANDBY) {
+        currentState = STATE_PLAYING;
+        stateStartTime = millis();
+        k10.rgb->write(-1, 0x22C55E); // Green playback light
+        drawUI("PLAYING AUDIO...", 0xE0A96D);
+
         music.playTFCardAudio("S:/sound.wav");
-        delay(3000); // Wait for playback duration
-
-        // Turn off LED & show completion status
-        k10.rgb->write(-1, 0x000000);
-        drawUI("Status: PLAYBACK DONE", 0x00FF88);
-
-        // Debounce wait for button release
-        while (k10.buttonB->isPressed()) {
-            delay(50);
-        }
     }
 
-    delay(20);
+    // Non-blocking state transition timeout
+    if (currentState == STATE_RECORDING && (millis() - stateStartTime >= RECORD_DURATION_MS)) {
+        currentState = STATE_STANDBY;
+        k10.rgb->write(-1, 0x000000);
+        drawUI("Audio Saved: sound.wav", 0x22C55E);
+    } else if (currentState == STATE_PLAYING && (millis() - stateStartTime >= PLAY_DURATION_MS)) {
+        currentState = STATE_STANDBY;
+        k10.rgb->write(-1, 0x000000);
+        music.stopPlayAudio();
+        drawUI("Playback Completed", 0x22C55E);
+    }
+
+    delay(30); // Responsive loop tick
 }
 ```

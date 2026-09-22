@@ -1,17 +1,14 @@
 ## What this tutorial is??
 
-This tutorial introduces **optical environmental sensing** on the UNIHIKER K10. 
+This tutorial demonstrates how to read the onboard **LTR-303ALS Ambient Light Sensor (ALS)** and visualize real-time illumination levels using a **Solar Gold Radiance** HUD.
 
-You will learn how to read ambient illuminance levels using the onboard digital Ambient Light Sensor (ALS), quantify light intensity in **Lux**, categorize lighting environments into qualitative comfort tiers (Dark, Dim, Normal, Very Bright), and display live telemetry on the screen.
+You will learn how to query the optical sensor, format raw lux telemetry, render a dynamic proportional progress scale bar, and classify the current operating state (Night, Dim Indoors, Optimal Room, Direct Sunlight).
 
 ### Expected Behavior
-- Row 1 displays the golden title `"LIGHT SENSOR"`.
-- Row 3 continuously displays the real-time calibrated illuminance reading (e.g., `Light: 245 Lux`) in cyan (`0x00E5FF`).
-- Row 5 displays a color-coded state classification that updates instantly when light levels change:
-  - `< 50 Lux`: `State: Dark` (Grey `0x888888`)
-  - `50 - 300 Lux`: `State: Dim Light` (Orange `0xFFA500`)
-  - `300 - 800 Lux`: `State: Normal` (Green `0x00FF00`)
-  - `> 800 Lux`: `State: Very Bright` (White `0xFFFFFF`)
+- **Solar Gold Header**: Clean typography with zero horizontal overflow.
+- **Primary Lux Card**: Large 24px numeric readout with dynamic centering.
+- **Dynamic Lux Scale Bar**: Real-time proportional bar graph scaling across 0–3000 Lux.
+- **Operating Environment Classifier**: Intelligent condition assessment with contextual badge colors.
 
 ---
 
@@ -127,38 +124,79 @@ void loop() {
 #include "unihiker_k10.h"
 
 UNIHIKER_K10 k10;
+uint8_t screen_dir = 2; // Portrait orientation (240x320)
 
 void setup() {
     k10.begin();
-    k10.initScreen(2);               // 2 = Portrait orientation
-    k10.creatCanvas();               // Create canvas
-    k10.setScreenBackground(0x000000); // Black background
+    k10.initScreen(screen_dir);
+    k10.creatCanvas();
+    // Solar Gold Warm Charcoal background
+    k10.setScreenBackground(0x141008);
 
-    // Row 1: Title
-    k10.canvas->canvasText("LIGHT SENSOR", 1, 0xFEE715);
-    k10.canvas->updateCanvas();
+    k10.rgb->brightness(5);
+    k10.rgb->write(-1, 0xFFB703); // Solar Gold glow
 }
 
 void loop() {
-    // Read onboard Ambient Light Sensor (0 - 1000+ lux)
     uint16_t lightLevel = k10.readALS();
 
-    // Row 3: Display raw sensor reading
-    k10.canvas->canvasText("Light: " + String(lightLevel) + " Lux", 3, 0x00E5FF);
+    k10.canvas->canvasClear();
 
-    // Row 5: Display condition description
-    if (lightLevel < 50) {
-        k10.canvas->canvasText("State: Dark", 5, 0x888888);
-    } else if (lightLevel < 300) {
-        k10.canvas->canvasText("State: Dim Light", 5, 0xFFA500);
-    } else if (lightLevel < 800) {
-        k10.canvas->canvasText("State: Normal", 5, 0x00FF00);
-    } else {
-        k10.canvas->canvasText("State: Very Bright", 5, 0xFFFFFF);
+    // 1. Solar Header Banner
+    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x221708, 0x221708, true);
+    k10.canvas->canvasLine(0, 42, 240, 42, 0xFFB703);
+    k10.canvas->canvasText("LIGHT SENSOR", 46, 10, 0xFFB703,
+                           k10.canvas->eCNAndENFont24, 15, false);
+
+    // 2. Primary Lux Telemetry Card
+    k10.canvas->canvasRectangle(14, 54, 212, 105, 0x3D290F, 0x1F1409, true);
+    k10.canvas->canvasText("Ambient Illumination", 36, 64, 0xD4A373,
+                           k10.canvas->eCNAndENFont16, 22, false);
+
+    String luxStr = String(lightLevel) + " Lux";
+    int valX = 120 - (int)(luxStr.length() * 7);
+    k10.canvas->canvasText(luxStr, valX, 95, 0xFFD166,
+                           k10.canvas->eCNAndENFont24, 12, false);
+
+    // Lux Dynamic Scale Bar (0 - 3000 lux)
+    int fillW = map(constrain(lightLevel, 0, 3000), 0, 3000, 0, 188);
+    k10.canvas->canvasRectangle(26, 134, 188, 10, 0x3D290F, 0x0E0A05, true);
+    if (fillW > 0) {
+        k10.canvas->canvasRectangle(26, 134, fillW, 10, 0xFB8500, 0xFB8500, true);
     }
 
-    // Refresh display
+    // 3. Condition State Card
+    k10.canvas->canvasRectangle(14, 172, 212, 85, 0x3D290F, 0x1F1409, true);
+    k10.canvas->canvasText("Operating Environment:", 28, 184, 0x94A3B8,
+                           k10.canvas->eCNAndENFont16, 22, false);
+
+    String stateStr = "";
+    uint32_t stateColor = 0xFFFFFF;
+
+    if (lightLevel < 50) {
+        stateStr = "State: Night / Dark";
+        stateColor = 0x94A3B8;
+    } else if (lightLevel < 300) {
+        stateStr = "State: Dim Indoors";
+        stateColor = 0xF59E0B;
+    } else if (lightLevel < 1000) {
+        stateStr = "State: Optimal Room";
+        stateColor = 0x10B981;
+    } else {
+        stateStr = "State: Direct Sunlight";
+        stateColor = 0xFFD166;
+    }
+
+    int stateX = 120 - (int)(stateStr.length() * 4);
+    k10.canvas->canvasText(stateStr, stateX, 215, stateColor,
+                           k10.canvas->eCNAndENFont16, 24, false);
+
+    // 4. Centered Footer Bar (Zero-overflow)
+    k10.canvas->canvasLine(15, 276, 225, 276, 0x3D290F);
+    k10.canvas->canvasText("LTR-303ALS Optical Sensor", 24, 290, 0x8D6E63,
+                           k10.canvas->eCNAndENFont16, 26, false);
+
     k10.canvas->updateCanvas();
-    delay(200);
+    delay(150);
 }
 ```

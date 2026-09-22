@@ -45,100 +45,65 @@ Features:
 UNIHIKER_K10 k10;
 uint8_t screen_dir = 2; // Portrait orientation (240x320)
 
-uint32_t rgbToColor(uint8_t r, uint8_t g, uint8_t b) {
-    return ((uint32_t)r << 16) | ((uint32_t)g << 8) | (uint32_t)b;
-}
-
-struct Meteor {
-    float x;
-    float y;
-    float length;
-    float speed;
-    uint32_t headColor;
-    uint32_t tailColor;
+// Curated Aurora cosmic color palette
+const uint32_t auroraColors[] = {
+    0x00F0FF, // Electric Cyan
+    0x39FF14, // Neon Lime
+    0xFF007F, // Neon Pink
+    0xFFB800, // Star Gold
+    0xBD00FF, // Cosmic Violet
+    0x38BDF8  // Ice Blue
 };
-
-const int NUM_METEORS = 8;
-Meteor meteors[NUM_METEORS];
-
-void resetMeteor(int i) {
-    meteors[i].x = random(-20, 220);
-    meteors[i].y = random(-100, 0);
-    meteors[i].length = random(25, 60);
-    meteors[i].speed = random(8, 16);
-
-    uint8_t colorPick = random(0, 3);
-    if (colorPick == 0) {
-        meteors[i].headColor = 0xFFFFFF; // White-hot
-        meteors[i].tailColor = 0x00E5FF; // Neon cyan tail
-    } else if (colorPick == 1) {
-        meteors[i].headColor = 0xFFFFAA; // Warm core
-        meteors[i].tailColor = 0xFF007F; // Pink tail
-    } else {
-        meteors[i].headColor = 0xFFFFFF;
-        meteors[i].tailColor = 0xFEE715; // Golden tail
-    }
-}
+const int numColors = sizeof(auroraColors) / sizeof(auroraColors[0]);
 
 void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
     k10.creatCanvas();
-    k10.setScreenBackground(0x02020A); // Midnight sky
-
-    for (int i = 0; i < NUM_METEORS; i++) {
-        resetMeteor(i);
-        meteors[i].y = random(0, 300); // Stagger initial positions
-    }
+    // Deep Cosmos background
+    k10.setScreenBackground(0x040514);
 
     k10.rgb->brightness(5);
-    k10.rgb->write(-1, 0x002244);
+    k10.rgb->write(-1, 0xBD00FF); // Cosmic violet glow
 }
 
 void loop() {
     k10.canvas->canvasClear();
 
-    // 1. Static Night Sky Elements & Header
-    k10.canvas->canvasText("METEOR SHOWER", 35, 14, 0xFEE715,
-                           k10.canvas->eCNAndENFont24, 20, false);
-    k10.canvas->canvasLine(15, 44, 225, 44, 0x334155);
+    // 1. Cosmic Starlight Header Banner
+    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x0D0B24, 0x0D0B24, true);
+    k10.canvas->canvasLine(0, 42, 240, 42, 0x7209B7);
+    k10.canvas->canvasText("METEOR SHOWER", 44, 10, 0x38BDF8,
+                           k10.canvas->eCNAndENFont24, 15, false);
 
-    // 2. Background twinkling stars
-    for (int s = 0; s < 15; s++) {
-        int sx = (s * 37 + 13) % 230 + 5;
-        int sy = (s * 49 + 29) % 240 + 50;
+    // 2. Draw subtle background starfield points
+    for (int s = 0; s < 25; s++) {
+        int sx = (s * 47) % 230 + 5;
+        int sy = (s * 61) % 240 + 50;
         k10.canvas->canvasPoint(sx, sy, 0x64748B);
     }
 
-    // 3. Update and Render Meteors
-    for (int i = 0; i < NUM_METEORS; i++) {
-        // Move diagonally (45 degree fall)
-        meteors[i].x += meteors[i].speed * 0.7;
-        meteors[i].y += meteors[i].speed * 0.7;
+    // 3. Draw bounded dynamic meteor streaks
+    k10.canvas->canvasSetLineWidth(2);
+    for (int i = 0; i < 12; i++) {
+        int startX = random(10, 200);
+        int startY = random(48, 220);
+        int length = random(15, 45);
+        int endX = min(230, startX + length);
+        int endY = min(300, startY + length);
 
-        float startX = meteors[i].x;
-        float startY = meteors[i].y;
-        float endX = startX - (meteors[i].length * 0.7);
-        float endY = startY - (meteors[i].length * 0.7);
-
-        // Draw meteor streak
-        k10.canvas->canvasLine(endX, endY, startX, startY, meteors[i].tailColor);
-
-        // Draw glowing meteor head
-        k10.canvas->canvasCircle(startX, startY, 2, meteors[i].headColor, meteors[i].headColor, true);
-
-        // Reset if meteor leaves the screen bounds
-        if (meteors[i].y > 330 || meteors[i].x > 260) {
-            resetMeteor(i);
-        }
+        uint32_t color = auroraColors[random(0, numColors)];
+        k10.canvas->canvasLine(startX, startY, endX, endY, color);
+        // Bright meteor head spark
+        k10.canvas->canvasPoint(endX, endY, 0xFFFFFF);
     }
 
-    // 4. Footer
-    k10.canvas->canvasLine(15, 290, 225, 290, 0x334155);
-    k10.canvas->canvasText("Dynamic Vector Particle System", 15, 298, 0x00E5FF,
-                           k10.canvas->eCNAndENFont16, 30, false);
+    // 4. Centered Footer Status (Zero-overflow)
+    k10.canvas->canvasLine(15, 276, 225, 276, 0x1E1538);
+    k10.canvas->canvasText("Cosmic Star Stream", 48, 290, 0x818CF8,
+                           k10.canvas->eCNAndENFont16, 22, false);
 
     k10.canvas->updateCanvas();
-    delay(25);
+    delay(120);
 }
 ```
