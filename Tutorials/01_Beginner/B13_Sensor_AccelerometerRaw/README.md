@@ -1,44 +1,136 @@
-# Beginner 13: 6-Axis Accelerometer (IMU) Display
+## What this tutorial is??
 
-**Category**: Beginner - Fundamentals  
-**Target Board**: UNIHIKER K10  
-**Difficulty**: Beginner (Level 1)
+This tutorial introduces **inertial motion sensing** on the UNIHIKER K10 using the onboard 3-axis MEMS accelerometer.
 
----
-
-## What This Example Is Of
-
-Reads raw 3-axis acceleration vectors (X, Y, Z) from the onboard SC7A20 IMU sensor and displays the live values directly on the screen as simple, clean text.
+You will learn how to sample real-time linear acceleration along three orthogonal spatial axes ($X, Y, Z$), interpret gravitational forces measured in milli-gravities ($\text{mG}$), understand board orientation in 3D space, and render live inertial telemetry on the color screen.
 
 ### Expected Behavior
-- Displays simple text lines on the screen:
-  - **Row 1**: Title (`6-AXIS ACCEL`).
-  - **Row 3**: Lateral tilt force (`Accel X: <val>`).
-  - **Row 5**: Pitch / Forward-Backward force (`Accel Y: <val>`).
-  - **Row 7**: Vertical gravitational force (`Accel Z: <val>`).
+- Row 1 displays the golden title `"6-AXIS ACCEL"`.
+- Row 3 displays the real-time $X$-axis acceleration (e.g., `Accel X: -45`) in red (`0xFF5555`).
+- Row 5 displays the real-time $Y$-axis acceleration (e.g., `Accel Y: 980`) in green (`0x00FF00`).
+- Row 7 displays the real-time $Z$-axis acceleration (e.g., `Accel Z: 120`) in cyan (`0x00E5FF`).
+- Tilting, turning, or shaking the board causes the readings to respond instantaneously at a 10 Hz refresh rate.
 
 ---
 
-## Hardware Requirements
+## How it works
 
-- **Development Board**: UNIHIKER K10 (ESP32-S3)
-- **Peripherals Needed**: UNIHIKER K10 onboard 6-axis IMU, 2.8" LCD screen.
-- **Connection**: USB Type-C cable for power and programming.
+1. **MEMS Capacitive Accelerometer Physics**:
+   - Inside the microscopic sensor die is a tiny **proof mass** (micro-machined silicon seismic mass) suspended by flexible polysilicon springs.
+   - Extending from the proof mass are sets of interleaved capacitive finger combs that fit between stationary fixed fingers attached to the silicon substrate.
+2. **Newton's Second Law of Motion ($F = ma$)**:
+   - When the board accelerates (or when tilted relative to Earth's gravitational pull), the inertia of the proof mass causes it to deflect relative to the fixed frame.
+   - The deflection shifts the microscopic distances ($d_1, d_2$) between the capacitor fingers:
+     $$C_1 = \frac{\varepsilon A}{d_1}, \quad C_2 = \frac{\varepsilon A}{d_2}$$
+   - An onboard Charge-to-Voltage converter translates this differential capacitance ($\Delta C = C_1 - C_2$) into an analog voltage directly proportional to acceleration.
+3. **Milli-Gravities ($\text{mG}$) & Gravitational Vector**:
+   - Earth's standard gravitational acceleration at sea level is:
+     $$1\text{g} \approx 9.80665\text{ m/s}^2 = 1000\text{ mG (milli-gravities)}$$
+   - When the UNIHIKER K10 lies flat on a desk facing upward:
+     - The $X$-axis (horizontal lateral) experiences $0\text{ mG}$.
+     - The $Y$-axis (vertical longitudinal) experiences $0\text{ mG}$.
+     - The $Z$-axis (pointing perpendicular out of the glass) experiences $\approx +1000\text{ mG}$ ($+1\text{g}$) as it opposes Earth's gravity.
+   - Tilting the board redistributes Earth's $1000\text{ mG}$ vector between the $X$, $Y$, and $Z$ axes according to trigonometry ($\sin\theta, \cos\theta$).
+4. **I2C Bus Sampling**:
+   - The ESP32-S3 queries the onboard accelerometer (SC7A20H / MSA311) over I2C at address `0x19`.
+   - `k10.getAccelerometerX()`, `k10.getAccelerometerY()`, and `k10.getAccelerometerZ()` fetch 16-bit signed integer values expressed in calibrated $\text{mG}$.
 
 ---
 
-## Detailed Code Explanation
+## Sensors/actuator detaile
 
-### 1. Simple Row-Based Text API
-- `canvasText(text, row, color)`:
-  - `text`: String or integer to show.
-  - `row`: Screen text row number (`1` to `13`). The library automatically clears and updates each row cleanly.
-  - `color`: 24-bit Hex RGB color code.
-- `k10.getAccelerometerX()` / `Y()` / `Z()`: Reads raw acceleration in milli-gravities (`mG`).
+### 3-Axis Cartesian Coordinate Frame on UNIHIKER K10
+When holding the UNIHIKER K10 upright in Portrait orientation (screen facing you, buttons at the bottom):
+- **$X$-Axis**: Runs horizontally across the screen.
+  - Tilting board to the **Right**: $X$ becomes positive ($+1000\text{ mG}$ when vertical).
+  - Tilting board to the **Left**: $X$ becomes negative ($-1000\text{ mG}$ when vertical).
+- **$Y$-Axis**: Runs vertically along the screen.
+  - Tilting board **Downwards (Head down)**: $Y$ becomes negative.
+  - Tilting board **Upwards (Normal standing)**: $Y$ becomes positive ($\approx +1000\text{ mG}$).
+- **$Z$-Axis**: Points perpendicular directly out through the front glass.
+  - Board lying **Flat on table screen up**: $Z \approx +1000\text{ mG}$.
+  - Board lying **Face down screen on table**: $Z \approx -1000\text{ mG}$.
+
+```
+                 +Y (Top of Screen)
+                  ▲
+                  │
+                  │
+   -X ◄───────────┼───────────► +X (Right Edge)
+  (Left)          │
+                  │
+                  ▼
+                 -Y (Buttons A/B)
+
+       Z-Axis points OUT of the screen toward you (+Z)
+```
+
+### Static vs. Dynamic Acceleration
+- **Static Acceleration**: Constant gravitational force ($\approx 1\text{g}$). Used for tilt angles, roll/pitch calculation, and orientation detection (portrait vs landscape).
+- **Dynamic Acceleration**: Forces caused by motion, tapping, shaking, impacts, or vehicle movement. Used for pedometers (step counters), fall detection, and gesture control.
 
 ---
 
-## Complete Sketch Source Code
+## Step by step function wise code break down
+
+### 1. Library Inclusion & Screen Initialization
+```cpp
+#include "unihiker_k10.h"
+
+UNIHIKER_K10 k10;
+
+void setup() {
+    k10.begin();
+    k10.initScreen(2);               // 2 = Portrait orientation
+    k10.creatCanvas();               // Create canvas
+    k10.setScreenBackground(0x000000); // Black background
+
+    k10.canvas->canvasText("6-AXIS ACCEL", 1, 0xFEE715);
+    k10.canvas->updateCanvas();
+}
+```
+- Initializes board hardware, boots the accelerometer ASIC via I2C, sets up 240x320 portrait canvas, and writes header title on row 1.
+
+### 2. Reading Accelerometer & Formatted Display in `loop()`
+```cpp
+void loop() {
+    int ax = k10.getAccelerometerX();
+    int ay = k10.getAccelerometerY();
+    int az = k10.getAccelerometerZ();
+```
+- Fetches raw acceleration values in milli-gravities ($\text{mG}$) for all three spatial dimensions.
+
+```cpp
+    k10.canvas->canvasText("Accel X: " + String(ax), 3, 0xFF5555);
+    k10.canvas->canvasText("Accel Y: " + String(ay), 5, 0x00FF00);
+    k10.canvas->canvasText("Accel Z: " + String(az), 7, 0x00E5FF);
+
+    k10.canvas->updateCanvas();
+    delay(100);
+}
+```
+- Renders $X$-axis in coral red (`0xFF5555`) on row 3.
+- Renders $Y$-axis in vivid green (`0x00FF00`) on row 5.
+- Renders $Z$-axis in cyan (`0x00E5FF`) on row 7.
+- `updateCanvas()` pushes updates to the ST7789 display.
+- `delay(100)` creates a smooth 10 Hz refresh rate.
+
+---
+
+## API and Functions detailes
+
+| API / Method | Parameters | Return Type | Description |
+| :--- | :--- | :--- | :--- |
+| `k10.begin()` | None | `void` | Initializes board hardware, I2C buses, and accelerometer ASIC. |
+| `k10.getAccelerometerX()` | None | `int` | Returns linear acceleration along the $X$-axis in milli-gravities ($\text{mG}$). |
+| `k10.getAccelerometerY()` | None | `int` | Returns linear acceleration along the $Y$-axis in milli-gravities ($\text{mG}$). |
+| `k10.getAccelerometerZ()` | None | `int` | Returns linear acceleration along the $Z$-axis in milli-gravities ($\text{mG}$). |
+| `k10.canvas->canvasText(text, row, color)` | `String text`, `uint8_t row`, `uint32_t color` | `void` | Renders a text string on the designated row with auto background clearing. |
+| `k10.canvas->updateCanvas()` | None | `void` | Transfers RAM canvas buffer to physical LCD controller. |
+
+---
+
+## Full Code
 
 ```cpp
 #include "unihiker_k10.h"
