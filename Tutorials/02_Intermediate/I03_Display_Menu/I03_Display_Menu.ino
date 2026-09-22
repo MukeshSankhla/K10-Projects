@@ -12,64 +12,71 @@ const char* menuItems[] = {
     "5. SD File Browser"
 };
 const int totalItems = sizeof(menuItems) / sizeof(menuItems[0]);
-int highlightedIndex = 1; // Example active item (Sensor Monitor)
+int highlightedIndex = 1; // Active item
 
-const int START_Y = 56;
-const int CARD_HEIGHT = 36;
+const int START_Y = 52;
+const int CARD_HEIGHT = 38;
 const int CARD_SPACING = 8;
 
-// Render individual menu item card component
+// Clean Minimalist Light Theme Palette
+const uint32_t COLOR_BG        = 0xF8FAFC; // Soft Slate Off-White
+const uint32_t COLOR_CARD      = 0xFFFFFF; // Pure White Card Fill
+const uint32_t COLOR_BORDER    = 0xE2E8F0; // Delicate 1px Border
+const uint32_t COLOR_TEXT_PRI  = 0x0F172A; // Deep Slate Charcoal
+const uint32_t COLOR_TEXT_SEC  = 0x334155; // Slate Secondary
+const uint32_t COLOR_TEXT_MUTED= 0x64748B; // Slate Muted Label
+const uint32_t COLOR_SAPPHIRE  = 0x2563EB; // Sapphire Brand Accent
+
 void drawMenuCard(int i, bool isActive) {
     int cardY = START_Y + i * (CARD_HEIGHT + CARD_SPACING);
 
     if (isActive) {
-        // Highlighted Active Card: Royal violet border with warm gold indicator
-        k10.canvas->canvasRectangle(12, cardY, 216, CARD_HEIGHT, 0x818CF8, 0x1E1B4B, true);
-        k10.canvas->canvasText(">", 20, cardY + 9, 0xF59E0B,
-                               k10.canvas->eCNAndENFont16, 5, false);
-        k10.canvas->canvasText(menuItems[i], 36, cardY + 9, 0xE0E7FF,
-                               k10.canvas->eCNAndENFont16, 22, false);
+        // Active Card: Sapphire border outline with sapphire text
+        k10.canvas->canvasRectangle(10, cardY, 220, CARD_HEIGHT, COLOR_SAPPHIRE, COLOR_CARD, true);
+        k10.canvas->canvasText(">", 20, cardY + 11, COLOR_SAPPHIRE, k10.canvas->eCNAndENFont16, 5, false);
+        k10.canvas->canvasText(menuItems[i], 36, cardY + 11, COLOR_SAPPHIRE, k10.canvas->eCNAndENFont16, 22, false);
     } else {
-        // Inactive Cards: Muted borders and slate text
-        k10.canvas->canvasRectangle(12, cardY, 216, CARD_HEIGHT, 0x27273A, 0x12121E, true);
-        k10.canvas->canvasText(menuItems[i], 28, cardY + 9, 0x94A3B8,
-                               k10.canvas->eCNAndENFont16, 22, false);
+        // Inactive Card: Delicate 1px border with dark slate text
+        k10.canvas->canvasRectangle(10, cardY, 220, CARD_HEIGHT, COLOR_BORDER, COLOR_CARD, true);
+        k10.canvas->canvasText(menuItems[i], 24, cardY + 11, COLOR_TEXT_SEC, k10.canvas->eCNAndENFont16, 22, false);
     }
 }
 
-// Render static chrome (Header banner and footer guide) once
 void drawStaticChrome() {
-    // 1. Header Banner
-    k10.canvas->canvasRectangle(0, 0, 240, 44, 0x141424, 0x141424, true);
-    k10.canvas->canvasLine(0, 44, 240, 44, 0x312E81); // Royal indigo divider
-    k10.canvas->canvasText("MAIN MENU", 62, 10, 0xF59E0B,
-                           k10.canvas->eCNAndENFont24, 15, false);
+    k10.canvas->canvasClear();
+    k10.canvas->canvasRectangle(0, 0, 240, 320, COLOR_BG, COLOR_BG, true);
 
-    // 2. Footer Navigation Guide
-    k10.canvas->canvasLine(15, 282, 225, 282, 0x312E81);
-    k10.canvas->canvasText("Static Menu Preview", 46, 294, 0x818CF8,
-                           k10.canvas->eCNAndENFont16, 22, false);
+    // App Header Bar (y: 0 to 40)
+    k10.canvas->canvasRectangle(0, 0, 240, 40, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 40, 240, 40, COLOR_BORDER);
+    k10.canvas->canvasText("Main Menu", 14, 12, COLOR_TEXT_PRI, k10.canvas->eCNAndENFont16, 50, false);
+    // Sapphire brand dot
+    k10.canvas->canvasCircle(224, 20, 4, COLOR_SAPPHIRE, COLOR_SAPPHIRE, true);
+
+    // Footer Navigation Guide (y: 284 to 320)
+    k10.canvas->canvasRectangle(0, 284, 240, 36, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 284, 240, 284, COLOR_BORDER);
+    k10.canvas->canvasText("System Settings Menu", 14, 294, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
 }
 
 void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
     k10.creatCanvas();
-    // Executive Obsidian theme background
-    k10.setScreenBackground(0x0A0A14);
+    k10.setScreenBackground(COLOR_BG);
 
     k10.rgb->brightness(5);
-    k10.rgb->write(-1, 0x818CF8); // Indigo glow
+    k10.rgb->write(-1, 0x2563EB);
 
-    // Render chrome and components without full screen clears
     drawStaticChrome();
+
     for (int i = 0; i < totalItems; i++) {
         drawMenuCard(i, i == highlightedIndex);
     }
+
     k10.canvas->updateCanvas();
 }
 
 void loop() {
-    // Static layout demonstration
-    delay(100);
+    delay(200);
 }

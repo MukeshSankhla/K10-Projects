@@ -14,11 +14,20 @@ const int totalItems = sizeof(menuItems) / sizeof(menuItems[0]);
 int activeIndex = 0;
 String selectedMessage = "None";
 
-const int START_Y = 54;
+const int START_Y = 48;
 const int CARD_HEIGHT = 34;
 const int CARD_SPACING = 6;
 
-// Non-blocking button edge-detection state trackers
+// Clean Minimalist Light Theme Palette
+const uint32_t COLOR_BG        = 0xF8FAFC; // Soft Slate Off-White
+const uint32_t COLOR_CARD      = 0xFFFFFF; // Pure White Card Fill
+const uint32_t COLOR_BORDER    = 0xE2E8F0; // Delicate 1px Border
+const uint32_t COLOR_TEXT_PRI  = 0x0F172A; // Deep Slate Charcoal
+const uint32_t COLOR_TEXT_SEC  = 0x334155; // Slate Secondary
+const uint32_t COLOR_TEXT_MUTED= 0x64748B; // Slate Muted Label
+const uint32_t COLOR_SAPPHIRE  = 0x2563EB; // Sapphire Brand Accent
+const uint32_t COLOR_GREEN     = 0x16A34A; // Success Green
+
 bool checkButtonAPressed() {
     static bool lastState = false;
     static unsigned long lastDebounceTime = 0;
@@ -63,86 +72,81 @@ bool checkButtonBPressed() {
     return pressedEvent;
 }
 
-// Render individual menu item card component
-void drawMenuCard(int i, bool isFocused) {
+void drawMenuCard(int i, bool isActive) {
     int cardY = START_Y + i * (CARD_HEIGHT + CARD_SPACING);
 
-    if (isFocused) {
-        // Selected/Focused Card: Glacial Ice cyan highlight
-        k10.canvas->canvasRectangle(12, cardY, 216, CARD_HEIGHT, 0x00E5FF, 0x0F2942, true);
-        k10.canvas->canvasText(">", 20, cardY + 8, 0x00E5FF,
-                               k10.canvas->eCNAndENFont16, 5, false);
-        k10.canvas->canvasText(menuItems[i], 36, cardY + 8, 0xE0FBFC,
-                               k10.canvas->eCNAndENFont16, 22, false);
+    if (isActive) {
+        k10.canvas->canvasRectangle(10, cardY, 220, CARD_HEIGHT, COLOR_SAPPHIRE, COLOR_CARD, true);
+        k10.canvas->canvasText(">", 20, cardY + 9, COLOR_SAPPHIRE, k10.canvas->eCNAndENFont16, 5, false);
+        k10.canvas->canvasText(menuItems[i], 36, cardY + 9, COLOR_SAPPHIRE, k10.canvas->eCNAndENFont16, 22, false);
     } else {
-        // Unfocused Cards
-        k10.canvas->canvasRectangle(12, cardY, 216, CARD_HEIGHT, 0x1E3A5F, 0x0B1626, true);
-        k10.canvas->canvasText(menuItems[i], 28, cardY + 8, 0x94A3B8,
-                               k10.canvas->eCNAndENFont16, 22, false);
+        k10.canvas->canvasRectangle(10, cardY, 220, CARD_HEIGHT, COLOR_BORDER, COLOR_CARD, true);
+        k10.canvas->canvasText(menuItems[i], 24, cardY + 9, COLOR_TEXT_SEC, k10.canvas->eCNAndENFont16, 22, false);
     }
 }
 
-// Render dynamic status feedback component only
-void updateStatusBox(const String& message) {
-    k10.canvas->canvasRectangle(12, 226, 216, 34, 0x0284C7, 0x0E1A2E, true);
-    String statusStr = "Active: " + message;
-    k10.canvas->canvasText(statusStr, 22, 234, 0x38BDF8,
-                           k10.canvas->eCNAndENFont16, 24, false);
+void updateSelectedStatus(const String& msg) {
+    // Clear only inner selection card (x: 12..228, y: 250..276)
+    k10.canvas->canvasRectangle(12, 252, 216, 24, COLOR_CARD, COLOR_CARD, true);
+
+    String statusText = "Selected: " + msg;
+    k10.canvas->canvasText(statusText, 20, 256, COLOR_SAPPHIRE, k10.canvas->eCNAndENFont16, 22, false);
+    k10.canvas->updateCanvas();
 }
 
-// Render static chrome elements (header and navigation guide bar) once
 void drawStaticChrome() {
-    // 1. Header Banner
-    k10.canvas->canvasRectangle(0, 0, 240, 44, 0x0E1A2E, 0x0E1A2E, true);
-    k10.canvas->canvasLine(0, 44, 240, 44, 0x0284C7);
-    k10.canvas->canvasText("MENU NAVIGATOR", 36, 10, 0x38BDF8,
-                           k10.canvas->eCNAndENFont24, 16, false);
+    k10.canvas->canvasClear();
+    k10.canvas->canvasRectangle(0, 0, 240, 320, COLOR_BG, COLOR_BG, true);
 
-    // 2. Navigation Controls Bar (Zero-overflow 2-column layout)
-    k10.canvas->canvasLine(12, 272, 228, 272, 0x1E3A5F);
-    k10.canvas->canvasRectangle(12, 276, 216, 34, 0x1E3A5F, 0x0E1A2E, true);
-    k10.canvas->canvasText("[A] Next", 22, 285, 0x00E5FF,
-                           k10.canvas->eCNAndENFont16, 12, false);
-    k10.canvas->canvasText("[B] Select", 136, 285, 0x38BDF8,
-                           k10.canvas->eCNAndENFont16, 12, false);
+    // App Header Bar (y: 0 to 40)
+    k10.canvas->canvasRectangle(0, 0, 240, 40, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 40, 240, 40, COLOR_BORDER);
+    k10.canvas->canvasText("Interactive Menu", 14, 12, COLOR_TEXT_PRI, k10.canvas->eCNAndENFont16, 50, false);
+    // Sapphire brand dot
+    k10.canvas->canvasCircle(224, 20, 4, COLOR_SAPPHIRE, COLOR_SAPPHIRE, true);
+
+    // Selection Feedback Card (y: 248 to 280)
+    k10.canvas->canvasRectangle(10, 248, 220, 32, COLOR_BORDER, COLOR_CARD, true);
+
+    // Footer Bar (y: 286 to 320)
+    k10.canvas->canvasRectangle(0, 286, 240, 34, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 286, 240, 286, COLOR_BORDER);
+    k10.canvas->canvasText("[A] Next Item    [B] Select", 14, 294, COLOR_SAPPHIRE, k10.canvas->eCNAndENFont16, 50, false);
 }
 
 void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
     k10.creatCanvas();
-    // Arctic Night background
-    k10.setScreenBackground(0x08101E);
+    k10.setScreenBackground(COLOR_BG);
 
     k10.rgb->brightness(5);
-    k10.rgb->write(-1, 0x00E5FF);
+    k10.rgb->write(-1, 0x2563EB);
 
-    // Initial full paint: static chrome + all cards + status box
     drawStaticChrome();
+
     for (int i = 0; i < totalItems; i++) {
         drawMenuCard(i, i == activeIndex);
     }
-    updateStatusBox(selectedMessage);
+    updateSelectedStatus(selectedMessage);
+
     k10.canvas->updateCanvas();
 }
 
 void loop() {
-    // Dynamic Partial Refresh on Button A: Update ONLY the toggled menu cards
     if (checkButtonAPressed()) {
-        int prevIndex = activeIndex;
+        int oldIndex = activeIndex;
         activeIndex = (activeIndex + 1) % totalItems;
 
-        drawMenuCard(prevIndex, false); // Invalidate previous active card
-        drawMenuCard(activeIndex, true); // Highlight newly active card
+        drawMenuCard(oldIndex, false);
+        drawMenuCard(activeIndex, true);
         k10.canvas->updateCanvas();
     }
 
-    // Dynamic Partial Refresh on Button B: Update ONLY the status feedback box
     if (checkButtonBPressed()) {
-        selectedMessage = String(menuItems[activeIndex]).substring(3); // Strip number prefix
-        updateStatusBox(selectedMessage);
-        k10.canvas->updateCanvas();
+        selectedMessage = menuItems[activeIndex];
+        updateSelectedStatus(selectedMessage);
     }
 
-    delay(20); // Responsive loop tick
+    delay(10);
 }

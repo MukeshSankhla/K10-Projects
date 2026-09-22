@@ -5,7 +5,15 @@ uint8_t screen_dir = 2; // Portrait orientation (240x320)
 
 bool isViewingPhoto = false;
 
-// Non-blocking button edge-detection trackers
+#define COLOR_BG        0xF8FAFC
+#define COLOR_CARD      0xFFFFFF
+#define COLOR_BORDER    0xE2E8F0
+#define COLOR_TEXT_PRI  0x0F172A
+#define COLOR_TEXT_MUTED 0x64748B
+#define COLOR_PRIMARY   0x2563EB // Sapphire Blue
+#define COLOR_SUCCESS   0x059669 // Emerald Green
+#define COLOR_RETICLE   0x60A5FA // Soft Sky Blue
+
 bool checkButtonAPressed() {
     static bool lastState = false;
     static unsigned long lastDebounceTime = 0;
@@ -50,47 +58,47 @@ bool checkButtonBPressed() {
     return pressedEvent;
 }
 
-// Draw Leica Pro Viewfinder HUD
 void drawCameraHUD(const char* statusMessage, uint32_t statusColor) {
     k10.canvas->canvasClear();
+    k10.canvas->canvasSetLineWidth(1);
 
-    // 1. Top Viewfinder Header Bar
-    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x0A0A0A, 0x0A0A0A, true);
-    k10.canvas->canvasCircle(24, 21, 6, 0xEA2B2B, 0xEA2B2B, true); // Leica Red Dot
-    k10.canvas->canvasText("PRO CAMERA", 52, 10, 0xFAFAFA,
-                           k10.canvas->eCNAndENFont24, 15, false);
+    // 1. Top Viewfinder Header Card
+    k10.canvas->canvasRectangle(12, 10, 216, 38, COLOR_BORDER, COLOR_CARD, true);
+    k10.canvas->canvasCircle(28, 29, 4, COLOR_PRIMARY, COLOR_PRIMARY, true);
+    k10.canvas->canvasText("Camera Viewfinder", 44, 21, COLOR_TEXT_PRI,
+                           k10.canvas->eCNAndENFont16, 20, false);
 
     // 2. Status Banner
-    k10.canvas->canvasRectangle(12, 48, 216, 26, 0x18181B, 0x18181B, true);
+    k10.canvas->canvasRectangle(12, 54, 216, 26, COLOR_BORDER, COLOR_CARD, true);
     int statusX = 120 - (int)(strlen(statusMessage) * 4);
-    k10.canvas->canvasText(statusMessage, statusX, 53, statusColor,
+    k10.canvas->canvasText(statusMessage, statusX, 58, statusColor,
                            k10.canvas->eCNAndENFont16, 24, false);
 
-    // 3. Viewfinder Focus Reticle & Corner Framing Brackets
-    k10.canvas->canvasLine(110, 160, 130, 160, 0x00E5FF);
-    k10.canvas->canvasLine(120, 150, 120, 170, 0x00E5FF);
-    // Framing corners
-    k10.canvas->canvasLine(30, 90, 45, 90, 0x71717A);
-    k10.canvas->canvasLine(30, 90, 30, 105, 0x71717A);
-    k10.canvas->canvasLine(210, 90, 195, 90, 0x71717A);
-    k10.canvas->canvasLine(210, 90, 210, 105, 0x71717A);
-    k10.canvas->canvasLine(30, 230, 45, 230, 0x71717A);
-    k10.canvas->canvasLine(30, 230, 30, 215, 0x71717A);
-    k10.canvas->canvasLine(210, 230, 195, 230, 0x71717A);
-    k10.canvas->canvasLine(210, 230, 210, 215, 0x71717A);
+    // 3. Delicate 1px Reticle & Framing Corners
+    k10.canvas->canvasLine(112, 160, 128, 160, COLOR_RETICLE);
+    k10.canvas->canvasLine(120, 152, 120, 168, COLOR_RETICLE);
 
-    // 4. Centered Two-Column Control Bar (Zero-overflow)
-    k10.canvas->canvasRectangle(0, 272, 240, 48, 0x0A0A0A, 0x0A0A0A, true);
-    k10.canvas->canvasLine(0, 272, 240, 272, 0x27272A);
-    k10.canvas->canvasText("[A] Shutter", 22, 286, 0x00E5FF,
+    // Subtle corner markers
+    k10.canvas->canvasLine(30, 90, 45, 90, COLOR_BORDER);
+    k10.canvas->canvasLine(30, 90, 30, 105, COLOR_BORDER);
+    k10.canvas->canvasLine(210, 90, 195, 90, COLOR_BORDER);
+    k10.canvas->canvasLine(210, 90, 210, 105, COLOR_BORDER);
+    k10.canvas->canvasLine(30, 230, 45, 230, COLOR_BORDER);
+    k10.canvas->canvasLine(30, 230, 30, 215, COLOR_BORDER);
+    k10.canvas->canvasLine(210, 230, 195, 230, COLOR_BORDER);
+    k10.canvas->canvasLine(210, 230, 210, 215, COLOR_BORDER);
+
+    // 4. Centered Control Footer
+    k10.canvas->canvasRectangle(12, 270, 216, 40, COLOR_BORDER, COLOR_CARD, true);
+    k10.canvas->canvasText("[A] Shutter", 28, 281, COLOR_PRIMARY,
                            k10.canvas->eCNAndENFont16, 12, false);
-    k10.canvas->canvasText("[B] Gallery", 132, 286, 0x38BDF8,
+    k10.canvas->canvasLine(120, 276, 120, 304, COLOR_BORDER);
+    k10.canvas->canvasText("[B] Gallery", 136, 281, COLOR_TEXT_PRI,
                            k10.canvas->eCNAndENFont16, 12, false);
 
     k10.canvas->updateCanvas();
 }
 
-// Show the saved photo on canvas
 void showSavedPhoto() {
     k10.setBgCamerImage(false);
     k10.canvas->canvasClear();
@@ -98,14 +106,15 @@ void showSavedPhoto() {
     // Draw the BMP image from SD Card
     k10.canvas->canvasDrawImage(0, 0, "S:/photo.bmp");
 
-    // Top Header Badge
-    k10.canvas->canvasRectangle(0, 0, 240, 34, 0x000000, 0x000000, true);
-    k10.canvas->canvasText("Saved: S:/photo.bmp", 32, 10, 0xFEE715,
+    // Header Card
+    k10.canvas->canvasSetLineWidth(1);
+    k10.canvas->canvasRectangle(12, 10, 216, 36, COLOR_BORDER, COLOR_CARD, true);
+    k10.canvas->canvasText("Saved: S:/photo.bmp", 34, 18, COLOR_TEXT_PRI,
                            k10.canvas->eCNAndENFont16, 24, false);
 
-    // Bottom Control Badge
-    k10.canvas->canvasRectangle(0, 280, 240, 40, 0x000000, 0x000000, true);
-    k10.canvas->canvasText("[A] Return to Camera", 38, 292, 0x00FF88,
+    // Footer Return Card
+    k10.canvas->canvasRectangle(12, 272, 216, 38, COLOR_BORDER, COLOR_CARD, true);
+    k10.canvas->canvasText("[A] Return to Camera", 42, 282, COLOR_SUCCESS,
                            k10.canvas->eCNAndENFont16, 22, false);
 
     k10.canvas->updateCanvas();
@@ -124,30 +133,27 @@ void setup() {
     // Start live camera stream
     k10.setBgCamerImage(true);
 
-    drawCameraHUD("Lens: Live Viewfinder", 0x10B981);
+    drawCameraHUD("Live Preview", COLOR_SUCCESS);
 }
 
 void loop() {
-    // Non-blocking Button A Action (Capture or Return)
     if (checkButtonAPressed()) {
         if (isViewingPhoto) {
             isViewingPhoto = false;
             k10.setBgCamerImage(true);
-            drawCameraHUD("Lens: Live Viewfinder", 0x10B981);
+            drawCameraHUD("Live Preview", COLOR_SUCCESS);
         } else {
-            // Shutter Flash & Snapshot
             k10.rgb->write(-1, 0xFFFFFF); // Flash on
-            drawCameraHUD("Capturing frame...", 0xFF4444);
+            drawCameraHUD("Saving frame...", 0xE11D48);
 
             k10.photoSaveToTFCard("S:/photo.bmp");
 
             delay(150);
             k10.rgb->write(-1, 0x000000); // Flash off
-            drawCameraHUD("Saved: S:/photo.bmp", 0x00E5FF);
+            drawCameraHUD("Captured: photo.bmp", COLOR_PRIMARY);
         }
     }
 
-    // Non-blocking Button B Action (Gallery)
     if (checkButtonBPressed()) {
         if (!isViewingPhoto) {
             isViewingPhoto = true;
@@ -155,5 +161,5 @@ void loop() {
         }
     }
 
-    delay(20); // Responsive loop tick
+    delay(20);
 }

@@ -11,63 +11,67 @@ float lastPosX = 120.0;
 float lastPosY = 160.0;
 float velX = 0.0;
 float velY = 0.0;
-const float BALL_RADIUS = 10.0;
+const float BALL_RADIUS = 9.0;
 const float FRICTION = 0.96;
-const float BOUNCE = -0.75; // Restitution coefficient
+const float BOUNCE = -0.75;
 
-// Bounding box for the playing arena (212x220 px)
-const int ARENA_MIN_X = 14;
-const int ARENA_MAX_X = 226;
-const int ARENA_MIN_Y = 52;
-const int ARENA_MAX_Y = 272;
+// Playing Arena boundaries (x: 10..230, y: 48..276)
+const int ARENA_MIN_X = 10;
+const int ARENA_MAX_X = 230;
+const int ARENA_MIN_Y = 48;
+const int ARENA_MAX_Y = 276;
 
-// Render center bumper widget
+// Clean Minimalist Light Theme Palette
+const uint32_t COLOR_BG        = 0xF8FAFC; // Soft Slate Off-White
+const uint32_t COLOR_CARD      = 0xFFFFFF; // Pure White Card Fill
+const uint32_t COLOR_BORDER    = 0xE2E8F0; // Delicate 1px Border
+const uint32_t COLOR_BORDER_PEG= 0xCBD5E1; // Peg Border
+const uint32_t COLOR_TEXT_PRI  = 0x0F172A; // Deep Slate Charcoal
+const uint32_t COLOR_TEXT_MUTED= 0x64748B; // Slate Muted Label
+const uint32_t COLOR_SAPPHIRE  = 0x2563EB; // Sapphire Brand Accent
+const uint32_t COLOR_AMBER     = 0xD97706; // Amber Peg Center
+
 void drawCenterBumper() {
-    k10.canvas->canvasCircle(120, 162, 18, 0xFF007F, 0x220A33, true);
-    k10.canvas->canvasCircle(120, 162, 6, 0xFFE600, 0xFFE600, true);
+    k10.canvas->canvasCircle(120, 162, 18, COLOR_BORDER_PEG, COLOR_CARD, true);
+    k10.canvas->canvasCircle(120, 162, 6, COLOR_AMBER, COLOR_AMBER, true);
 }
 
-// 1. Render static layout (Arcade banner, arena border, bumper, footer line) once
 void drawScreenChrome() {
-    // Arcade Header Banner (Zero-overflow)
-    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x160D2E, 0x160D2E, true);
-    k10.canvas->canvasLine(0, 42, 240, 42, 0xFF007F);
-    k10.canvas->canvasText("PINBALL PHYSICS", 24, 10, 0xFFE600,
-                           k10.canvas->eCNAndENFont24, 16, false);
+    k10.canvas->canvasClear();
+    k10.canvas->canvasRectangle(0, 0, 240, 320, COLOR_BG, COLOR_BG, true);
 
-    // Arena container border with neon bumper rails
-    k10.canvas->canvasRectangle(ARENA_MIN_X, ARENA_MIN_Y, ARENA_MAX_X - ARENA_MIN_X, ARENA_MAX_Y - ARENA_MIN_Y, 0x00FF87, 0x110822, true);
+    // App Header Bar (y: 0 to 40)
+    k10.canvas->canvasRectangle(0, 0, 240, 40, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 40, 240, 40, COLOR_BORDER);
+    k10.canvas->canvasText("Marble Arena", 14, 12, COLOR_TEXT_PRI, k10.canvas->eCNAndENFont16, 50, false);
+    // Sapphire brand dot
+    k10.canvas->canvasCircle(224, 20, 4, COLOR_SAPPHIRE, COLOR_SAPPHIRE, true);
 
-    // Arena center bonus bumper
+    // Arena container border
+    k10.canvas->canvasRectangle(ARENA_MIN_X, ARENA_MIN_Y, ARENA_MAX_X - ARENA_MIN_X, ARENA_MAX_Y - ARENA_MIN_Y, COLOR_BORDER, COLOR_CARD, true);
+
     drawCenterBumper();
 
-    // Footer divider line
-    k10.canvas->canvasLine(15, 276, 225, 276, 0x241142);
+    // Footer Bar (y: 284 to 320)
+    k10.canvas->canvasRectangle(0, 284, 240, 36, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 284, 240, 284, COLOR_BORDER);
+    k10.canvas->canvasText("Tilt board to roll the marble", 14, 294, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
 }
 
-// 2. Dynamic Partial Refresh: erase ball, draw ball, and update speed text
 void updateDynamicEntities() {
-    // Erase old ball position using arena background color (0x110822)
-    k10.canvas->canvasCircle((int)lastPosX, (int)lastPosY, (int)BALL_RADIUS + 2, 0x110822, 0x110822, true);
+    // Erase old ball position with pure white card color
+    k10.canvas->canvasCircle((int)lastPosX, (int)lastPosY, (int)BALL_RADIUS + 2, COLOR_CARD, COLOR_CARD, true);
 
-    // If previous or current position intersected center bumper, repair bumper
+    // Repair center bumper if ball overlapped it
     float distLast = sqrt(pow(lastPosX - 120.0, 2) + pow(lastPosY - 162.0, 2));
-    float distNew = sqrt(pow(posX - 120.0, 2) + pow(posY - 162.0, 2));
+    float distNew  = sqrt(pow(posX - 120.0, 2) + pow(posY - 162.0, 2));
     if (distLast < 32.0 || distNew < 32.0) {
         drawCenterBumper();
     }
 
-    // Draw Rolling Pinball at new position
-    k10.canvas->canvasCircle((int)posX, (int)posY, (int)BALL_RADIUS, 0xFFE600, 0xFFE600, true);
-    k10.canvas->canvasCircle((int)posX - 3, (int)posY - 3, 2, 0xFFFFFF, 0xFFFFFF, true);
-
-    // Erase and redraw speed footer telemetry
-    k10.canvas->canvasRectangle(50, 286, 140, 24, 0x0A0618, 0x0A0618, true);
-    float currentSpeed = sqrt(velX * velX + velY * velY);
-    String speedStr = "Speed: " + String((int)currentSpeed) + " px/s";
-    int speedX = 120 - (int)(speedStr.length() * 4);
-    k10.canvas->canvasText(speedStr, speedX, 290, 0x00F5D4,
-                           k10.canvas->eCNAndENFont16, 20, false);
+    // Draw marble at new position
+    k10.canvas->canvasCircle((int)posX, (int)posY, (int)BALL_RADIUS, COLOR_SAPPHIRE, COLOR_SAPPHIRE, true);
+    k10.canvas->canvasCircle((int)posX - 2, (int)posY - 2, 3, COLOR_CARD, COLOR_CARD, true);
 
     lastPosX = posX;
     lastPosY = posY;
@@ -77,70 +81,76 @@ void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
     k10.creatCanvas();
-    // Neon Pinball Arcade background
-    k10.setScreenBackground(0x0A0618);
+    k10.setScreenBackground(COLOR_BG);
 
     k10.rgb->brightness(5);
-    k10.rgb->write(-1, 0x00FF87);
+    k10.rgb->write(-1, 0x2563EB);
 
-    // Initial paint: static chrome + initial ball + speed
     drawScreenChrome();
-    updateDynamicEntities();
     k10.canvas->updateCanvas();
 }
 
 void loop() {
-    // 1. Ingest tilt acceleration
-    int accX = k10.getAccelerometerX();
-    int accY = k10.getAccelerometerY();
+    float ax = k10.getAccelerometerX() / 1000.0;
+    float ay = k10.getAccelerometerY() / 1000.0;
 
-    // Map tilt acceleration to applied physics force
-    velX += (accX / 120.0);
-    velY += (accY / 120.0);
+    velX -= ax * 1.8;
+    velY += ay * 1.8;
 
-    // Apply viscous damping friction
     velX *= FRICTION;
     velY *= FRICTION;
 
-    // Integrate position
     posX += velX;
     posY += velY;
 
     bool collision = false;
 
-    // Boundary collisions with restitution
-    if (posX - BALL_RADIUS < ARENA_MIN_X) {
-        posX = ARENA_MIN_X + BALL_RADIUS;
-        velX *= BOUNCE;
-        collision = true;
-    } else if (posX + BALL_RADIUS > ARENA_MAX_X) {
-        posX = ARENA_MAX_X - BALL_RADIUS;
+    // Arena walls collision
+    if (posX < (ARENA_MIN_X + BALL_RADIUS + 1)) {
+        posX = ARENA_MIN_X + BALL_RADIUS + 1;
         velX *= BOUNCE;
         collision = true;
     }
-
-    if (posY - BALL_RADIUS < ARENA_MIN_Y) {
-        posY = ARENA_MIN_Y + BALL_RADIUS;
+    if (posX > (ARENA_MAX_X - BALL_RADIUS - 1)) {
+        posX = ARENA_MAX_X - BALL_RADIUS - 1;
+        velX *= BOUNCE;
+        collision = true;
+    }
+    if (posY < (ARENA_MIN_Y + BALL_RADIUS + 1)) {
+        posY = ARENA_MIN_Y + BALL_RADIUS + 1;
         velY *= BOUNCE;
         collision = true;
-    } else if (posY + BALL_RADIUS > ARENA_MAX_Y) {
-        posY = ARENA_MAX_Y - BALL_RADIUS;
+    }
+    if (posY > (ARENA_MAX_Y - BALL_RADIUS - 1)) {
+        posY = ARENA_MAX_Y - BALL_RADIUS - 1;
         velY *= BOUNCE;
         collision = true;
     }
 
-    // Optical & Audio collision feedback
-    if (collision && (abs(velX) > 1.5 || abs(velY) > 1.5)) {
-        k10.rgb->write(-1, 0xFF007F); // Neon pink collision flash
-        music.playTone(1200, 30);
-    } else {
-        k10.rgb->write(-1, 0x00FF87);
+    // Center Bumper collision
+    float dx = posX - 120.0;
+    float dy = posY - 162.0;
+    float dist = sqrt((dx * dx) + (dy * dy));
+    float minDist = 18.0 + BALL_RADIUS;
+
+    if (dist < minDist && dist > 0.001) {
+        float nx = dx / dist;
+        float ny = dy / dist;
+
+        posX = 120.0 + (nx * (minDist + 1.0));
+        posY = 162.0 + (ny * (minDist + 1.0));
+
+        float dot = (velX * nx) + (velY * ny);
+        velX = (velX - 2.0 * dot * nx) * 0.85;
+        velY = (velY - 2.0 * dot * ny) * 0.85;
+        collision = true;
     }
 
-    // 2. Dynamic Partial Refresh: update ball and speed readout without screen clear
+    if (collision) {
+        music.playTone(880, 20);
+    }
+
     updateDynamicEntities();
-
-    // Flush canvas without full-screen flicker
     k10.canvas->updateCanvas();
-    delay(20);
+    delay(25);
 }

@@ -4,7 +4,6 @@ UNIHIKER_K10 k10;
 uint8_t screen_dir = 2; // Portrait orientation (240x320)
 Music music;
 
-// Playlist stored on the MicroSD card
 const char* playlist[] = {
     "track1.wav",
     "sound.wav",
@@ -13,15 +12,26 @@ const char* playlist[] = {
 const char* artists[] = {
     "Unihiker K10",
     "Voice Memo",
-    "Retro Beats"
+    "Acoustic Beats"
 };
 const int totalTracks = sizeof(playlist) / sizeof(playlist[0]);
 int currentTrack = 0;
 bool isPlaying = false;
-int trackProgressPercent = 25; // Simulated playback position (0-100%)
+int trackProgressPercent = 25;
 unsigned long lastScrubUpdate = 0;
 
-// Non-blocking button state tracker
+// Clean Minimalist Light Theme Palette
+const uint32_t COLOR_BG        = 0xF8FAFC; // Soft Slate Off-White
+const uint32_t COLOR_CARD      = 0xFFFFFF; // Pure White Card Fill
+const uint32_t COLOR_TRACK     = 0xF1F5F9; // Soft Track Fill
+const uint32_t COLOR_BORDER    = 0xE2E8F0; // Delicate 1px Border
+const uint32_t COLOR_BORDER_TRK= 0xCBD5E1; // Track 1px Border
+const uint32_t COLOR_TEXT_PRI  = 0x0F172A; // Deep Slate Charcoal
+const uint32_t COLOR_TEXT_SEC  = 0x334155; // Slate Secondary
+const uint32_t COLOR_TEXT_MUTED= 0x64748B; // Slate Muted Label
+const uint32_t COLOR_ROSE      = 0xE11D48; // Clean Rose Brand Accent
+const uint32_t COLOR_GREEN     = 0x16A34A; // Playing Green
+
 bool checkButtonAPressed() {
     static bool lastState = false;
     static unsigned long lastDebounceTime = 0;
@@ -66,173 +76,113 @@ bool checkButtonBPressed() {
     return pressedEvent;
 }
 
-// 1. Render static iPod Classic chrome once (status bar shell, album art frame/vinyl, controls)
-void drawScreenChrome() {
-    // Top status bar background & divider
-    k10.canvas->canvasRectangle(0, 0, 240, 26, 0x1E293B, 0x1E293B, true);
-    k10.canvas->canvasLine(0, 26, 240, 26, 0x334155);
+void drawStaticChrome() {
+    k10.canvas->canvasClear();
+    k10.canvas->canvasRectangle(0, 0, 240, 320, COLOR_BG, COLOR_BG, true);
 
-    // Iconic "iPod" emblem centered
-    k10.canvas->canvasText("iPod", 104, 5, 0xF8FAFC, k10.canvas->eCNAndENFont16, 10, false);
+    // App Header Bar (y: 0 to 40)
+    k10.canvas->canvasRectangle(0, 0, 240, 40, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 40, 240, 40, COLOR_BORDER);
+    k10.canvas->canvasText("Music Player", 14, 12, COLOR_TEXT_PRI, k10.canvas->eCNAndENFont16, 50, false);
+    // Rose brand dot
+    k10.canvas->canvasCircle(224, 20, 4, COLOR_ROSE, COLOR_ROSE, true);
 
-    // Battery gauge on the right
-    k10.canvas->canvasRectangle(206, 8, 20, 10, 0x94A3B8, 0x0F172A, true);
-    k10.canvas->canvasRectangle(226, 11, 2, 4, 0x94A3B8, 0x94A3B8, true); // Terminal pip
-    k10.canvas->canvasRectangle(208, 10, 14, 6, 0x10B981, 0x10B981, true); // Full green charge
+    // Album Art Frame (y: 48 to 164)
+    k10.canvas->canvasRectangle(10, 48, 220, 116, COLOR_BORDER, COLOR_CARD, true);
 
-    // Outer artwork plinth frame with drop-shadow effect
-    k10.canvas->canvasRectangle(64, 38, 112, 112, 0x94A3B8, 0x0F172A, true);
-    k10.canvas->canvasRectangle(66, 40, 108, 108, 0x1E293B, 0x111827, true);
+    // Decorative vinyl disc rings
+    k10.canvas->canvasCircle(120, 106, 42, COLOR_BORDER, COLOR_TRACK, true);
+    k10.canvas->canvasCircle(120, 106, 28, COLOR_BORDER_TRK, COLOR_CARD, true);
+    k10.canvas->canvasCircle(120, 106, 10, COLOR_ROSE, COLOR_ROSE, true);
 
-    // Stylized vinyl record disc
-    k10.canvas->canvasCircle(120, 94, 46, 0x334155, 0x0A0A0A, true);
-    k10.canvas->canvasCircle(120, 94, 34, 0x1E293B, 0x0A0A0A, false);
-    k10.canvas->canvasCircle(120, 94, 24, 0x334155, 0x0A0A0A, false);
+    // Track Info Card (y: 172 to 276)
+    k10.canvas->canvasRectangle(10, 172, 220, 104, COLOR_BORDER, COLOR_CARD, true);
 
-    // Static Album Name
-    k10.canvas->canvasText("K10 Classics Album", 48, 216, 0x64748B, k10.canvas->eCNAndENFont16, 24, false);
+    // Timeline Track Frame (y: 242 to 252)
+    k10.canvas->canvasRectangle(20, 242, 200, 10, COLOR_BORDER_TRK, COLOR_TRACK, true);
 
-    // Bottom controls guide bar
-    k10.canvas->canvasLine(12, 272, 228, 272, 0xCBD5E1);
-    k10.canvas->canvasRectangle(12, 278, 216, 34, 0x94A3B8, 0xF1F5F9, true);
-    k10.canvas->canvasText("[A] Play/Pause", 20, 287, 0x0284C7, k10.canvas->eCNAndENFont16, 15, false);
-    k10.canvas->canvasText("[B] Next >>", 136, 287, 0x0F172A, k10.canvas->eCNAndENFont16, 12, false);
+    // Footer Bar (y: 284 to 320)
+    k10.canvas->canvasRectangle(0, 284, 240, 36, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 284, 240, 284, COLOR_BORDER);
+    k10.canvas->canvasText("[A] Play/Pause    [B] Next Track", 14, 294, COLOR_ROSE, k10.canvas->eCNAndENFont16, 50, false);
 }
 
-// 2. Dynamic Partial Refresh: update ONLY play/pause glyph and vinyl core label
-void updatePlayPauseStatus(bool playing) {
-    // Clear status bar glyph box
-    k10.canvas->canvasRectangle(12, 6, 16, 14, 0x1E293B, 0x1E293B, true);
+void updateTrackInfo(int trackIdx, bool playing) {
+    // Clear track name and artist lines (y: 180..232)
+    k10.canvas->canvasRectangle(12, 176, 216, 62, COLOR_CARD, COLOR_CARD, true);
 
+    // Play/Pause state pill
     if (playing) {
-        // Play triangle glyph
-        k10.canvas->canvasLine(14, 8, 14, 18, 0x10B981);
-        k10.canvas->canvasLine(14, 8, 22, 13, 0x10B981);
-        k10.canvas->canvasLine(14, 18, 22, 13, 0x10B981);
-        k10.canvas->canvasLine(15, 9, 21, 13, 0x10B981);
+        k10.canvas->canvasRectangle(20, 180, 68, 18, COLOR_GREEN, COLOR_GREEN, true);
+        k10.canvas->canvasText("PLAYING", 26, 181, COLOR_CARD, k10.canvas->eCNAndENFont16, 50, false);
     } else {
-        // Pause double-bar glyph
-        k10.canvas->canvasRectangle(14, 8, 3, 10, 0xF59E0B, 0xF59E0B, true);
-        k10.canvas->canvasRectangle(19, 8, 3, 10, 0xF59E0B, 0xF59E0B, true);
+        k10.canvas->canvasRectangle(20, 180, 68, 18, COLOR_BORDER, COLOR_TRACK, true);
+        k10.canvas->canvasText("PAUSED", 28, 181, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
     }
 
-    // Center vinyl label (vibrant album core)
-    uint32_t labelColor = playing ? 0x0284C7 : 0x64748B;
-    k10.canvas->canvasCircle(120, 94, 15, labelColor, labelColor, true);
-    k10.canvas->canvasCircle(120, 94, 4, 0xE2E8F0, 0xE2E8F0, true); // Spindle hole
+    // Track Title
+    k10.canvas->canvasText(playlist[trackIdx], 20, 204, COLOR_TEXT_PRI, k10.canvas->eCNAndENFont16, 24, false);
+
+    // Artist
+    k10.canvas->canvasText(artists[trackIdx], 20, 224, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 24, false);
+
+    k10.canvas->updateCanvas();
 }
 
-// 3. Dynamic Partial Refresh: update ONLY track title, artist, and track index
-void updateTrackMetadata(int trackIndex) {
-    // Clear track metadata text region (x=10, y=156, w=220, h=58)
-    k10.canvas->canvasRectangle(10, 156, 220, 58, 0xE2E8F0, 0xE2E8F0, true);
+void updateScrubBar(int percent) {
+    // Clear and redraw progress fill
+    k10.canvas->canvasRectangle(21, 243, 198, 8, COLOR_TRACK, COLOR_TRACK, true);
 
-    // Track index badge (e.g. "Track 1 of 3")
-    String indexStr = "Track " + String(trackIndex + 1) + " of " + String(totalTracks);
-    k10.canvas->canvasText(indexStr, 82, 158, 0x64748B, k10.canvas->eCNAndENFont16, 15, false);
-
-    // Track filename
-    String titleStr = String(playlist[trackIndex]);
-    int titleX = max(10, (240 - (int)(titleStr.length() * 8)) / 2);
-    k10.canvas->canvasText(titleStr, titleX, 178, 0x0F172A, k10.canvas->eCNAndENFont16, 24, false);
-
-    // Artist name
-    String artistStr = String(artists[trackIndex]);
-    int artistX = max(10, (240 - (int)(artistStr.length() * 8)) / 2);
-    k10.canvas->canvasText(artistStr, artistX, 198, 0x0284C7, k10.canvas->eCNAndENFont16, 24, false);
-}
-
-// 4. Dynamic Partial Refresh: update ONLY timeline scrubber bar and timestamps
-void updateScrubTimeline(int progressPercent) {
-    // Clear scrubber rail and timestamps region (x=10, y=235, w=220, h=34)
-    k10.canvas->canvasRectangle(10, 235, 220, 34, 0xE2E8F0, 0xE2E8F0, true);
-
-    // Scrub timeline rail (x=24, y=238, w=192, h=6)
-    k10.canvas->canvasRectangle(24, 238, 192, 6, 0x94A3B8, 0xCBD5E1, true);
-
-    // Elapsed scrub progress fill
-    int fillW = map(progressPercent, 0, 100, 0, 192);
+    int fillW = map(constrain(percent, 0, 100), 0, 100, 0, 198);
     if (fillW > 0) {
-        k10.canvas->canvasRectangle(24, 238, fillW, 6, 0x0284C7, 0x0284C7, true);
+        k10.canvas->canvasRectangle(21, 243, fillW, 8, COLOR_ROSE, COLOR_ROSE, true);
     }
-    // Scrub diamond/pip thumb
-    int thumbX = 24 + fillW;
-    k10.canvas->canvasCircle(thumbX, 241, 5, 0x0F172A, 0xFFFFFF, true);
-
-    // Timestamps: Elapsed (Left) & Remaining (Right)
-    int elapsedSec = (progressPercent * 180) / 100;
-    int remainSec = 180 - elapsedSec;
-    char timeBuffer[16];
-
-    sprintf(timeBuffer, "%d:%02d", elapsedSec / 60, elapsedSec % 60);
-    k10.canvas->canvasText(timeBuffer, 24, 248, 0x475569, k10.canvas->eCNAndENFont16, 8, false);
-
-    sprintf(timeBuffer, "-%d:%02d", remainSec / 60, remainSec % 60);
-    k10.canvas->canvasText(timeBuffer, 178, 248, 0x475569, k10.canvas->eCNAndENFont16, 8, false);
+    k10.canvas->updateCanvas();
 }
 
 void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
     k10.creatCanvas();
-    k10.initSDFile(); // Mount SD card
-    // iPod Classic Ice Silver LCD background
-    k10.setScreenBackground(0xE2E8F0);
+    k10.setScreenBackground(COLOR_BG);
 
     k10.rgb->brightness(5);
-    k10.rgb->write(-1, 0x000000);
+    k10.rgb->write(-1, 0xE11D48);
 
-    // Initial paint: static chrome + initial track details + scrubber
-    drawScreenChrome();
-    updatePlayPauseStatus(isPlaying);
-    updateTrackMetadata(currentTrack);
-    updateScrubTimeline(trackProgressPercent);
-    k10.canvas->updateCanvas();
+    drawStaticChrome();
+    updateTrackInfo(currentTrack, isPlaying);
+    updateScrubBar(trackProgressPercent);
 }
 
 void loop() {
-    // Non-blocking Button A: Toggle Play / Pause
     if (checkButtonAPressed()) {
         isPlaying = !isPlaying;
+        updateTrackInfo(currentTrack, isPlaying);
 
         if (isPlaying) {
-            k10.rgb->write(-1, 0x0284C7); // Classic iPod Blue glow
-            String path = "S:/" + String(playlist[currentTrack]);
-            music.playTFCardAudio(path.c_str());
+            music.playMusic(ODE, Once);
+            k10.rgb->write(-1, 0x16A34A);
         } else {
-            k10.rgb->write(-1, 0x000000);
-            music.stopPlayAudio();
+            k10.rgb->write(-1, 0xE11D48);
         }
-        // Dynamic Partial Refresh: update ONLY play/pause indicator and vinyl label
-        updatePlayPauseStatus(isPlaying);
-        k10.canvas->updateCanvas();
     }
 
-    // Non-blocking Button B: Next Track
     if (checkButtonBPressed()) {
         currentTrack = (currentTrack + 1) % totalTracks;
-        trackProgressPercent = 0; // Reset scrub bar for new track
+        trackProgressPercent = 0;
+        updateTrackInfo(currentTrack, isPlaying);
+        updateScrubBar(trackProgressPercent);
+        music.playTone(880, 500);
+    }
 
-        if (isPlaying) {
-            music.stopPlayAudio();
-            String path = "S:/" + String(playlist[currentTrack]);
-            music.playTFCardAudio(path.c_str());
+    if (isPlaying) {
+        unsigned long now = millis();
+        if (now - lastScrubUpdate >= 300) {
+            lastScrubUpdate = now;
+            trackProgressPercent = (trackProgressPercent + 1) % 100;
+            updateScrubBar(trackProgressPercent);
         }
-        // Dynamic Partial Refresh: update track metadata, scrub bar, and status
-        updateTrackMetadata(currentTrack);
-        updateScrubTimeline(trackProgressPercent);
-        updatePlayPauseStatus(isPlaying);
-        k10.canvas->updateCanvas();
     }
 
-    // Advance simulated timeline scrubber when playing (every 1s)
-    if (isPlaying && (millis() - lastScrubUpdate > 1000)) {
-        lastScrubUpdate = millis();
-        trackProgressPercent = (trackProgressPercent + 1) % 100;
-        // Dynamic Partial Refresh: update ONLY scrub bar and timestamps
-        updateScrubTimeline(trackProgressPercent);
-        k10.canvas->updateCanvas();
-    }
-
-    delay(20); // Responsive loop tick
+    delay(20);
 }

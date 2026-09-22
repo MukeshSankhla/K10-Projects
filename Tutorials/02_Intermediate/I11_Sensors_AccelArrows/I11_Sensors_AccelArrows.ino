@@ -3,139 +3,136 @@
 UNIHIKER_K10 k10;
 uint8_t screen_dir = 2; // Portrait orientation (240x320)
 
-// Helper to draw a bold directional arrow pointing in one of 4 cardinal directions
+// Clean Minimalist Light Theme Palette
+const uint32_t COLOR_BG        = 0xF8FAFC; // Soft Slate Off-White
+const uint32_t COLOR_CARD      = 0xFFFFFF; // Pure White Card Fill
+const uint32_t COLOR_BORDER    = 0xE2E8F0; // Delicate 1px Border
+const uint32_t COLOR_BORDER_DIAL=0xCBD5E1; // Dial Ring 1px Border
+const uint32_t COLOR_TEXT_PRI  = 0x0F172A; // Deep Slate Charcoal
+const uint32_t COLOR_TEXT_SEC  = 0x334155; // Slate Secondary
+const uint32_t COLOR_TEXT_MUTED= 0x64748B; // Slate Muted Label
+const uint32_t COLOR_TEAL      = 0x0D9488; // Teal Brand Accent
+const uint32_t COLOR_GREEN     = 0x16A34A; // Level Green
+const uint32_t COLOR_BLUE      = 0x2563EB; // Direction Blue
+
 void drawDirectionArrow(int centerX, int centerY, int direction, uint32_t color) {
-    // direction: 0 = Flat/Center, 1 = Forward (Up), 2 = Back (Down), 3 = Left, 4 = Right
     if (direction == 0) {
-        // Level Target Reticle
-        k10.canvas->canvasCircle(centerX, centerY, 22, color, 0x0E1F18, true);
-        k10.canvas->canvasCircle(centerX, centerY, 7, color, color, true);
-    } else if (direction == 1) { // Forward (Up)
-        k10.canvas->canvasLine(centerX, centerY - 40, centerX - 26, centerY - 14, color);
-        k10.canvas->canvasLine(centerX, centerY - 40, centerX + 26, centerY - 14, color);
-        k10.canvas->canvasLine(centerX, centerY - 40, centerX, centerY + 40, color);
-        k10.canvas->canvasLine(centerX - 1, centerY - 40, centerX - 1, centerY + 40, color);
-        k10.canvas->canvasLine(centerX + 1, centerY - 40, centerX + 1, centerY + 40, color);
-    } else if (direction == 2) { // Back (Down)
-        k10.canvas->canvasLine(centerX, centerY + 40, centerX - 26, centerY + 14, color);
-        k10.canvas->canvasLine(centerX, centerY + 40, centerX + 26, centerY + 14, color);
-        k10.canvas->canvasLine(centerX, centerY - 40, centerX, centerY + 40, color);
-        k10.canvas->canvasLine(centerX - 1, centerY - 40, centerX - 1, centerY + 40, color);
-        k10.canvas->canvasLine(centerX + 1, centerY - 40, centerX + 1, centerY + 40, color);
+        // Level Target Circle
+        k10.canvas->canvasCircle(centerX, centerY, 16, COLOR_GREEN, COLOR_GREEN, true);
+        k10.canvas->canvasCircle(centerX, centerY, 6, COLOR_CARD, COLOR_CARD, true);
+    } else if (direction == 1) { // Up / Forward
+        k10.canvas->canvasLine(centerX, centerY - 32, centerX - 18, centerY - 10, color);
+        k10.canvas->canvasLine(centerX, centerY - 32, centerX + 18, centerY - 10, color);
+        k10.canvas->canvasLine(centerX, centerY - 32, centerX, centerY + 32, color);
+    } else if (direction == 2) { // Down / Back
+        k10.canvas->canvasLine(centerX, centerY + 32, centerX - 18, centerY + 10, color);
+        k10.canvas->canvasLine(centerX, centerY + 32, centerX + 18, centerY + 10, color);
+        k10.canvas->canvasLine(centerX, centerY - 32, centerX, centerY + 32, color);
     } else if (direction == 3) { // Left
-        k10.canvas->canvasLine(centerX - 40, centerY, centerX - 14, centerY - 26, color);
-        k10.canvas->canvasLine(centerX - 40, centerY, centerX - 14, centerY + 26, color);
-        k10.canvas->canvasLine(centerX - 40, centerY, centerX + 40, centerY, color);
-        k10.canvas->canvasLine(centerX - 40, centerY - 1, centerX + 40, centerY - 1, color);
-        k10.canvas->canvasLine(centerX - 40, centerY + 1, centerX + 40, centerY + 1, color);
+        k10.canvas->canvasLine(centerX - 32, centerY, centerX - 10, centerY - 18, color);
+        k10.canvas->canvasLine(centerX - 32, centerY, centerX - 10, centerY + 18, color);
+        k10.canvas->canvasLine(centerX - 32, centerY, centerX + 32, centerY, color);
     } else if (direction == 4) { // Right
-        k10.canvas->canvasLine(centerX + 40, centerY, centerX + 14, centerY - 26, color);
-        k10.canvas->canvasLine(centerX + 40, centerY, centerX + 14, centerY + 26, color);
-        k10.canvas->canvasLine(centerX - 40, centerY, centerX + 40, centerY, color);
-        k10.canvas->canvasLine(centerX - 40, centerY - 1, centerX + 40, centerY - 1, color);
-        k10.canvas->canvasLine(centerX - 40, centerY + 1, centerX + 40, centerY + 1, color);
+        k10.canvas->canvasLine(centerX + 32, centerY, centerX + 10, centerY - 18, color);
+        k10.canvas->canvasLine(centerX + 32, centerY, centerX + 10, centerY + 18, color);
+        k10.canvas->canvasLine(centerX - 32, centerY, centerX + 32, centerY, color);
     }
 }
 
-// 1. Render static tactical header banner and outer radar frame once
 void drawScreenChrome() {
-    // Tactical Header Banner
-    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x0C1914, 0x0C1914, true);
-    k10.canvas->canvasLine(0, 42, 240, 42, 0x39FF14);
-    k10.canvas->canvasText("TACTICAL RADAR", 30, 10, 0x39FF14,
-                           k10.canvas->eCNAndENFont24, 16, false);
+    k10.canvas->canvasClear();
+    k10.canvas->canvasRectangle(0, 0, 240, 320, COLOR_BG, COLOR_BG, true);
 
-    // Outer Radar Scope Ring
-    k10.canvas->canvasCircle(120, 155, 74, 0x163326, 0x0A1712, true);
+    // App Header Bar (y: 0 to 40)
+    k10.canvas->canvasRectangle(0, 0, 240, 40, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 40, 240, 40, COLOR_BORDER);
+    k10.canvas->canvasText("Tilt Compass", 14, 12, COLOR_TEXT_PRI, k10.canvas->eCNAndENFont16, 50, false);
+    // Teal brand dot
+    k10.canvas->canvasCircle(224, 20, 4, COLOR_TEAL, COLOR_TEAL, true);
+
+    // Compass Card Frame (y: 48 to 226)
+    k10.canvas->canvasRectangle(10, 48, 220, 178, COLOR_BORDER, COLOR_CARD, true);
+
+    // Status Banner Card (y: 234 to 278)
+    k10.canvas->canvasRectangle(10, 234, 220, 44, COLOR_BORDER, COLOR_CARD, true);
+
+    // Footer Bar (y: 284 to 320)
+    k10.canvas->canvasRectangle(0, 284, 240, 36, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 284, 240, 284, COLOR_BORDER);
+    k10.canvas->canvasText("3-Axis Accelerometer Spirit Level", 14, 294, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
 }
 
-// 2. Dynamic Partial Refresh: update ONLY radar reticle and arrow
 void updateRadarReticle(int centerX, int centerY, int direction, uint32_t arrowColor) {
-    // Clear inner scope area (radius 73)
-    k10.canvas->canvasCircle(centerX, centerY, 73, 0x163326, 0x0A1712, true);
+    // Clear inner scope area
+    k10.canvas->canvasCircle(centerX, centerY, 68, COLOR_CARD, COLOR_CARD, true);
 
-    // Redraw concentric range rings
-    k10.canvas->canvasCircle(centerX, centerY, 52, 0x163326, 0x0A1712, false);
-    k10.canvas->canvasCircle(centerX, centerY, 30, 0x163326, 0x0A1712, false);
+    // Concentric range rings
+    k10.canvas->canvasCircle(centerX, centerY, 66, COLOR_BORDER_DIAL, COLOR_CARD, false);
+    k10.canvas->canvasCircle(centerX, centerY, 44, COLOR_BORDER, COLOR_CARD, false);
+    k10.canvas->canvasCircle(centerX, centerY, 22, COLOR_BORDER, COLOR_CARD, false);
 
-    // Redraw crosshair lines
-    k10.canvas->canvasLine(centerX, centerY - 70, centerX, centerY + 70, 0x132B20);
-    k10.canvas->canvasLine(centerX - 70, centerY, centerX + 70, centerY, 0x132B20);
+    // Crosshairs
+    k10.canvas->canvasLine(centerX - 66, centerY, centerX + 66, centerY, COLOR_BORDER);
+    k10.canvas->canvasLine(centerX, centerY - 66, centerX, centerY + 66, COLOR_BORDER);
 
-    // Draw active directional arrow
     drawDirectionArrow(centerX, centerY, direction, arrowColor);
 }
 
-// 3. Dynamic Partial Refresh: update ONLY direction status banner
-void updateDirectionBanner(const String& dirLabel, uint32_t arrowColor) {
-    k10.canvas->canvasRectangle(24, 242, 192, 32, arrowColor, 0x0C1914, true);
-    int labelX = 120 - (int)(dirLabel.length() * 4);
-    k10.canvas->canvasText(dirLabel, labelX, 250, arrowColor,
-                           k10.canvas->eCNAndENFont16, 20, false);
-}
+void updateTelemetryCards(const char* label, uint32_t labelColor, float ax, float ay) {
+    // Clear status banner
+    k10.canvas->canvasRectangle(12, 236, 216, 40, COLOR_CARD, COLOR_CARD, true);
 
-// 4. Dynamic Partial Refresh: update ONLY raw accelerometer readout
-void updateRawAccel(int accX, int accY) {
-    // Clear raw accel text area
-    k10.canvas->canvasRectangle(20, 288, 200, 22, 0x060D0A, 0x060D0A, true);
+    int labelX = 120 - (int)(strlen(label) * 4);
+    k10.canvas->canvasText(label, labelX, 242, labelColor, k10.canvas->eCNAndENFont16, 20, false);
 
-    String rawStr = "X: " + String(accX) + "  Y: " + String(accY);
-    int rawX = 120 - (int)(rawStr.length() * 4);
-    k10.canvas->canvasText(rawStr, rawX, 290, 0x64748B,
-                           k10.canvas->eCNAndENFont16, 22, false);
+    String tiltStr = "Pitch: " + String(ay, 2) + "  Roll: " + String(ax, 2);
+    int tiltX = 120 - (int)(tiltStr.length() * 4);
+    k10.canvas->canvasText(tiltStr, tiltX, 260, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 26, false);
+
+    k10.canvas->updateCanvas();
 }
 
 void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
     k10.creatCanvas();
-    // Tactical Radar theme background
-    k10.setScreenBackground(0x060D0A);
+    k10.setScreenBackground(COLOR_BG);
 
     k10.rgb->brightness(5);
-    k10.rgb->write(-1, 0x39FF14); // Radar phosphor green
+    k10.rgb->write(-1, 0x0D9488);
 
-    // Initial paint: static chrome + initial reticle and text
     drawScreenChrome();
-    updateRadarReticle(120, 155, 0, 0x39FF14);
-    updateDirectionBanner("Level (Centered)", 0x39FF14);
-    updateRawAccel(0, 0);
     k10.canvas->updateCanvas();
 }
 
 void loop() {
-    int accX = k10.getAccelerometerX();
-    int accY = k10.getAccelerometerY();
+    float ax = k10.getAccelerometerX() / 1000.0;
+    float ay = k10.getAccelerometerY() / 1000.0;
 
-    int direction = 0; // 0 = Center
-    String dirLabel = "Level (Centered)";
-    uint32_t arrowColor = 0x39FF14;
+    int direction = 0;
+    const char* label = "LEVEL - BALANCED";
+    uint32_t arrowColor = COLOR_GREEN;
 
-    // Evaluate tilt direction using accelerometer gravity vectors
-    if (k10.isGesture(TiltForward) || accY < -300) {
+    if (ay > 0.30) {
         direction = 1;
-        dirLabel = "Pitch FORWARD";
-        arrowColor = 0x00F0FF;
-    } else if (k10.isGesture(TiltBack) || accY > 300) {
+        label = "TILT: FORWARD";
+        arrowColor = COLOR_BLUE;
+    } else if (ay < -0.30) {
         direction = 2;
-        dirLabel = "Pitch BACKWARD";
-        arrowColor = 0xFFB800;
-    } else if (k10.isGesture(TiltLeft) || accX < -300) {
+        label = "TILT: BACKWARD";
+        arrowColor = COLOR_BLUE;
+    } else if (ax > 0.30) {
         direction = 3;
-        dirLabel = "Roll LEFT";
-        arrowColor = 0x38BDF8;
-    } else if (k10.isGesture(TiltRight) || accX > 300) {
+        label = "TILT: LEFT";
+        arrowColor = COLOR_BLUE;
+    } else if (ax < -0.30) {
         direction = 4;
-        dirLabel = "Roll RIGHT";
-        arrowColor = 0xFF007F;
+        label = "TILT: RIGHT";
+        arrowColor = COLOR_BLUE;
     }
 
-    // Dynamic Partial Refresh: update ONLY reticle, banner, and raw text
-    updateRadarReticle(120, 155, direction, arrowColor);
-    updateDirectionBanner(dirLabel, arrowColor);
-    updateRawAccel(accX, accY);
+    updateRadarReticle(120, 137, direction, arrowColor);
+    updateTelemetryCards(label, arrowColor, ax, ay);
 
-    // Flush canvas without full-screen flicker
-    k10.canvas->updateCanvas();
     delay(50);
 }

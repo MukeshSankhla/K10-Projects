@@ -4,104 +4,87 @@ UNIHIKER_K10 k10;
 uint8_t screen_dir = 2; // Portrait orientation (240x320)
 AHT20 aht20;
 
-// 1. Draw static gauge chrome (label, outer track container, tick marks) once
-void drawGaugeStaticChrome(int x, int y, int width, int height, const char* label) {
-    // Label on the left
-    k10.canvas->canvasText(label, x, y - 20, 0xF1F5F9,
-                           k10.canvas->eCNAndENFont16, 16, false);
+// Clean Minimalist Light Theme Palette
+const uint32_t COLOR_BG        = 0xF8FAFC; // Soft Slate Off-White
+const uint32_t COLOR_CARD      = 0xFFFFFF; // Pure White Card Fill
+const uint32_t COLOR_TRACK     = 0xF1F5F9; // Soft Track Fill
+const uint32_t COLOR_BORDER    = 0xE2E8F0; // Delicate 1px Border
+const uint32_t COLOR_BORDER_TRK= 0xCBD5E1; // Track Border
+const uint32_t COLOR_TEXT_PRI  = 0x0F172A; // Deep Slate Charcoal
+const uint32_t COLOR_TEXT_MUTED= 0x64748B; // Slate Muted Label
+const uint32_t COLOR_AMBER     = 0xD97706; // Amber
+const uint32_t COLOR_CORAL     = 0xE11D48; // Coral
+const uint32_t COLOR_TEAL      = 0x0D9488; // Teal
+const uint32_t COLOR_GREEN     = 0x16A34A; // Success Green
 
-    // Track container
-    k10.canvas->canvasRectangle(x, y, width, height, 0x1E3A5F, 0x0C1F33, true);
-
-    // Tick marks along bottom
-    for (int t = 0; t <= 4; t++) {
-        int tickX = x + (t * (width - 1) / 4);
-        k10.canvas->canvasLine(tickX, y + height, tickX, y + height + 4, 0x1E3A5F);
-    }
+void drawGaugeCard(int cardY, const char* label) {
+    k10.canvas->canvasRectangle(10, cardY, 220, 68, COLOR_BORDER, COLOR_CARD, true);
+    k10.canvas->canvasText(label, 20, cardY + 12, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 18, false);
+    k10.canvas->canvasRectangle(20, cardY + 36, 200, 18, COLOR_BORDER_TRK, COLOR_TRACK, true);
 }
 
-// 2. Dynamic Partial Refresh: update ONLY numeric sensor readout and inner fill bar
-void updateLinearGaugeValue(int x, int y, int width, int height, float value, float minVal, float maxVal, const char* unit, uint32_t barColor) {
-    // Clear previous right-aligned readout area (width 75px, height 18px)
-    k10.canvas->canvasRectangle(x + width - 75, y - 20, 75, 18, 0x071524, 0x071524, true);
+void updateLinearGauge(int cardY, float value, float minVal, float maxVal, const char* unit, uint32_t barColor) {
+    // Clear numeric readout area (x: 140..220, y: cardY + 10)
+    k10.canvas->canvasRectangle(140, cardY + 10, 80, 20, COLOR_CARD, COLOR_CARD, true);
 
-    // Draw updated sensor numeric readout
     String valStr = String(value, 1) + " " + unit;
-    int readoutX = x + width - (int)(valStr.length() * 8);
-    k10.canvas->canvasText(valStr, readoutX, y - 20, barColor,
-                           k10.canvas->eCNAndENFont16, 12, false);
+    int readoutX = 220 - (int)(valStr.length() * 8);
+    k10.canvas->canvasText(valStr, readoutX, cardY + 12, COLOR_TEXT_PRI, k10.canvas->eCNAndENFont16, 12, false);
 
-    // Clear previous inner bar area with track container background
-    k10.canvas->canvasRectangle(x + 2, y + 2, width - 4, height - 4, 0x0C1F33, 0x0C1F33, true);
+    // Clear and redraw inner track bar
+    k10.canvas->canvasRectangle(22, cardY + 38, 196, 14, COLOR_TRACK, COLOR_TRACK, true);
 
-    // Draw updated dynamic fill bar
     float constrainedVal = constrain(value, minVal, maxVal);
-    int fillWidth = (int)(((constrainedVal - minVal) / (maxVal - minVal)) * (width - 4));
-
-    if (fillWidth > 0) {
-        k10.canvas->canvasRectangle(x + 2, y + 2, fillWidth, height - 4, barColor, barColor, true);
+    int fillW = (int)(((constrainedVal - minVal) / (maxVal - minVal)) * 196);
+    if (fillW > 0) {
+        k10.canvas->canvasRectangle(22, cardY + 38, fillW, 14, barColor, barColor, true);
     }
 }
 
-// Render static screen layout (Header banner, footer, and gauge frames) once
 void drawScreenChrome() {
-    // 1. Diagnostic Header Banner
-    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x0E2438, 0x0E2438, true);
-    k10.canvas->canvasLine(0, 42, 240, 42, 0x00F0FF);
-    k10.canvas->canvasText("ENV TELEMETRY", 44, 10, 0x00F0FF,
-                           k10.canvas->eCNAndENFont24, 15, false);
+    k10.canvas->canvasClear();
+    k10.canvas->canvasRectangle(0, 0, 240, 320, COLOR_BG, COLOR_BG, true);
 
-    // 2. Static Gauge Containers and Labels
-    drawGaugeStaticChrome(20, 84, 200, 22, "Ambient Light");
-    drawGaugeStaticChrome(20, 154, 200, 22, "Temperature");
-    drawGaugeStaticChrome(20, 224, 200, 22, "Humidity");
+    // App Header Bar (y: 0 to 40)
+    k10.canvas->canvasRectangle(0, 0, 240, 40, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 40, 240, 40, COLOR_BORDER);
+    k10.canvas->canvasText("Sensor Gauges", 14, 12, COLOR_TEXT_PRI, k10.canvas->eCNAndENFont16, 50, false);
+    // Green brand dot
+    k10.canvas->canvasCircle(224, 20, 4, COLOR_GREEN, COLOR_GREEN, true);
 
-    // 3. Centered Footer (Zero-overflow)
-    k10.canvas->canvasLine(15, 276, 225, 276, 0x1E3A5F);
-    k10.canvas->canvasText("Live Lab Telemetry", 48, 290, 0x64748B,
-                           k10.canvas->eCNAndENFont16, 22, false);
+    // 3 Gauge Cards
+    drawGaugeCard(48, "Ambient Light");
+    drawGaugeCard(124, "Temperature");
+    drawGaugeCard(200, "Humidity");
+
+    // Footer Bar (y: 284 to 320)
+    k10.canvas->canvasRectangle(0, 284, 240, 36, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 284, 240, 284, COLOR_BORDER);
+    k10.canvas->canvasText("Onboard Sensors Real-Time Telemetry", 14, 294, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
 }
 
 void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
     k10.creatCanvas();
-    // Deep Marine Diagnostic theme background
-    k10.setScreenBackground(0x071524);
+    k10.setScreenBackground(COLOR_BG);
 
     k10.rgb->brightness(5);
-    k10.rgb->write(-1, 0x00F0FF);
+    k10.rgb->write(-1, 0x16A34A);
 
-    // Initial paint: static chrome + initial sensor readings
     drawScreenChrome();
-
-    int lightALS = k10.readALS();
-    float tempC = aht20.getData(AHT20::eAHT20TempC);
-    float humi = aht20.getData(AHT20::eAHT20HumiRH);
-
-    updateLinearGaugeValue(20, 84, 200, 22, lightALS, 0, 4000, "lx", 0x38BDF8);
-    uint32_t tempColor = (tempC > 32.0) ? 0xEF4444 : ((tempC > 24.0) ? 0xF59E0B : 0x10B981);
-    updateLinearGaugeValue(20, 154, 200, 22, tempC, 15.0, 45.0, "C", tempColor);
-    updateLinearGaugeValue(20, 224, 200, 22, humi, 20.0, 90.0, "%", 0x00F0FF);
-
     k10.canvas->updateCanvas();
 }
 
 void loop() {
-    // 1. Read onboard hardware sensors
-    int lightALS = k10.readALS();
-    float tempC = aht20.getData(AHT20::eAHT20TempC);
-    float humi = aht20.getData(AHT20::eAHT20HumiRH);
+    uint16_t light = k10.readALS();
+    float temp = aht20.getData(AHT20::eAHT20TempC);
+    float humid = aht20.getData(AHT20::eAHT20HumiRH);
 
-    // 2. Dynamic Partial Refresh: update ONLY gauge readouts and fill bars
-    updateLinearGaugeValue(20, 84, 200, 22, lightALS, 0, 4000, "lx", 0x38BDF8);
+    updateLinearGauge(48, (float)light, 0, 1000, "Lux", COLOR_AMBER);
+    updateLinearGauge(124, temp, 0, 50, "C", COLOR_CORAL);
+    updateLinearGauge(200, humid, 0, 100, "%", COLOR_TEAL);
 
-    uint32_t tempColor = (tempC > 32.0) ? 0xEF4444 : ((tempC > 24.0) ? 0xF59E0B : 0x10B981);
-    updateLinearGaugeValue(20, 154, 200, 22, tempC, 15.0, 45.0, "C", tempColor);
-
-    updateLinearGaugeValue(20, 224, 200, 22, humi, 20.0, 90.0, "%", 0x00F0FF);
-
-    // 3. Flush canvas to screen without full-screen flicker
     k10.canvas->updateCanvas();
-    delay(100);
+    delay(200);
 }

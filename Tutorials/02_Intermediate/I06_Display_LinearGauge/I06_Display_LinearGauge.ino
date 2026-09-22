@@ -3,103 +3,93 @@
 UNIHIKER_K10 k10;
 uint8_t screen_dir = 2; // Portrait orientation (240x320)
 
-// 1. Draw static gauge elements (title label, track border, tick marks) once
-void drawGaugeStaticChrome(int x, int y, int width, int height, const char* label) {
-    // Label on the left
-    k10.canvas->canvasText(label, x, y - 20, 0xF1F5F9,
-                           k10.canvas->eCNAndENFont16, 18, false);
+// Clean Minimalist Light Theme Palette
+const uint32_t COLOR_BG        = 0xF8FAFC; // Soft Slate Off-White
+const uint32_t COLOR_CARD      = 0xFFFFFF; // Pure White Card Fill
+const uint32_t COLOR_TRACK     = 0xF1F5F9; // Soft Track Fill
+const uint32_t COLOR_BORDER    = 0xE2E8F0; // Delicate 1px Border
+const uint32_t COLOR_BORDER_TRK= 0xCBD5E1; // Track Border
+const uint32_t COLOR_TEXT_PRI  = 0x0F172A; // Deep Slate Charcoal
+const uint32_t COLOR_TEXT_MUTED= 0x64748B; // Slate Muted Label
+const uint32_t COLOR_BLUE      = 0x0284C7; // Sky Blue
+const uint32_t COLOR_GREEN     = 0x16A34A; // Emerald
+const uint32_t COLOR_AMBER     = 0xD97706; // Amber
 
-    // Gauge Track Background & Border
-    k10.canvas->canvasRectangle(x, y, width, height, 0x334155, 0x131C24, true);
+void drawGaugeCard(int cardY, const char* label) {
+    // Card container (y: cardY to cardY + 68)
+    k10.canvas->canvasRectangle(10, cardY, 220, 68, COLOR_BORDER, COLOR_CARD, true);
 
-    // Tick marks along bottom
-    for (int t = 0; t <= 4; t++) {
-        int tickX = x + (t * (width - 1) / 4);
-        k10.canvas->canvasLine(tickX, y + height, tickX, y + height + 4, 0x475569);
-    }
+    // Label
+    k10.canvas->canvasText(label, 20, cardY + 12, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 18, false);
+
+    // Track frame (x: 20..220, y: cardY + 36, w: 200, h: 18)
+    k10.canvas->canvasRectangle(20, cardY + 36, 200, 18, COLOR_BORDER_TRK, COLOR_TRACK, true);
 }
 
-// 2. Dynamic Partial Refresh: update ONLY numeric percentage readout and inner fill bar
-void updateLinearGaugeValue(int x, int y, int width, int height, int value, int minVal, int maxVal, uint32_t barColor) {
-    // Clear previous right-aligned percentage readout area (width 50px, height 18px)
-    k10.canvas->canvasRectangle(x + width - 50, y - 20, 50, 18, 0x0C1217, 0x0C1217, true);
+void updateGauge(int cardY, int value, uint32_t barColor) {
+    // Clear numeric percentage area (x: 160..220, y: cardY + 10)
+    k10.canvas->canvasRectangle(160, cardY + 10, 60, 20, COLOR_CARD, COLOR_CARD, true);
 
-    // Draw new percentage readout
     String valStr = String(value) + "%";
-    int readoutX = x + width - (int)(valStr.length() * 8);
-    k10.canvas->canvasText(valStr, readoutX, y - 20, barColor,
-                           k10.canvas->eCNAndENFont16, 8, false);
+    int readoutX = 220 - (int)(valStr.length() * 9);
+    k10.canvas->canvasText(valStr, readoutX, cardY + 12, COLOR_TEXT_PRI, k10.canvas->eCNAndENFont16, 8, false);
 
-    // Clear previous inner bar area with track background
-    k10.canvas->canvasRectangle(x + 2, y + 2, width - 4, height - 4, 0x131C24, 0x131C24, true);
+    // Clear and redraw inner track bar
+    k10.canvas->canvasRectangle(22, cardY + 38, 196, 14, COLOR_TRACK, COLOR_TRACK, true);
 
-    // Draw updated filled bar indicator
-    int constrainedVal = constrain(value, minVal, maxVal);
-    int fillWidth = map(constrainedVal, minVal, maxVal, 0, width - 4);
-
-    if (fillWidth > 0) {
-        k10.canvas->canvasRectangle(x + 2, y + 2, fillWidth, height - 4, barColor, barColor, true);
+    int fillW = map(constrain(value, 0, 100), 0, 100, 0, 196);
+    if (fillW > 0) {
+        k10.canvas->canvasRectangle(22, cardY + 38, fillW, 14, barColor, barColor, true);
     }
 }
 
-// Render static screen layout (Header banner and footer status) once
 void drawScreenChrome() {
-    // 1. SCADA Header Banner
-    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x131D24, 0x131D24, true);
-    k10.canvas->canvasLine(0, 42, 240, 42, 0x0284C7);
-    k10.canvas->canvasText("SCADA GAUGES", 48, 10, 0x38BDF8,
-                           k10.canvas->eCNAndENFont24, 15, false);
+    k10.canvas->canvasClear();
+    k10.canvas->canvasRectangle(0, 0, 240, 320, COLOR_BG, COLOR_BG, true);
 
-    // 2. Centered Footer Bus Status
-    k10.canvas->canvasLine(15, 276, 225, 276, 0x1E293B);
-    k10.canvas->canvasText("Telemetry Bus: Active", 36, 290, 0x64748B,
-                           k10.canvas->eCNAndENFont16, 24, false);
+    // App Header Bar (y: 0 to 40)
+    k10.canvas->canvasRectangle(0, 0, 240, 40, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 40, 240, 40, COLOR_BORDER);
+    k10.canvas->canvasText("Linear Gauges", 14, 12, COLOR_TEXT_PRI, k10.canvas->eCNAndENFont16, 50, false);
+    // Blue brand dot
+    k10.canvas->canvasCircle(224, 20, 4, COLOR_BLUE, COLOR_BLUE, true);
 
-    // 3. Static Gauge Containers and Labels
-    drawGaugeStaticChrome(20, 84, 200, 22, "Hydraulic Line");
-    drawGaugeStaticChrome(20, 154, 200, 22, "Core Temp");
-    drawGaugeStaticChrome(20, 224, 200, 20, "Storage Bank");
+    // 3 Gauge Cards
+    drawGaugeCard(48, "System Load");
+    drawGaugeCard(124, "Memory Usage");
+    drawGaugeCard(200, "Storage Volume");
+
+    // Footer Bar (y: 284 to 320)
+    k10.canvas->canvasRectangle(0, 284, 240, 36, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 284, 240, 284, COLOR_BORDER);
+    k10.canvas->canvasText("Dynamic Component Telemetry", 14, 294, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
 }
-
-int demoPercent = 0;
-int step = 2;
 
 void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
     k10.creatCanvas();
-    // Cyber-Industrial SCADA theme
-    k10.setScreenBackground(0x0C1217);
+    k10.setScreenBackground(COLOR_BG);
 
     k10.rgb->brightness(5);
-    k10.rgb->write(-1, 0x00E5FF);
+    k10.rgb->write(-1, 0x0284C7);
 
-    // Initial paint: static chrome + initial gauge states
     drawScreenChrome();
-    updateLinearGaugeValue(20, 84, 200, 22, demoPercent, 0, 100, 0x00E5FF);
-    updateLinearGaugeValue(20, 154, 200, 22, demoPercent, 0, 100, 0x10B981);
-    updateLinearGaugeValue(20, 224, 200, 20, 100 - demoPercent, 0, 100, 0x38BDF8);
     k10.canvas->updateCanvas();
 }
 
 void loop() {
-    // Dynamic Partial Refresh: update ONLY the gauge fill bars and percentage text readouts
-    updateLinearGaugeValue(20, 84, 200, 22, demoPercent, 0, 100, 0x00E5FF);
+    static int wave = 0;
+    wave = (wave + 2) % 360;
 
-    uint32_t tempColor = (demoPercent > 75) ? 0xEF4444 : ((demoPercent > 45) ? 0xF59E0B : 0x10B981);
-    updateLinearGaugeValue(20, 154, 200, 22, demoPercent, 0, 100, tempColor);
+    int v1 = 50 + (int)(45.0 * sin(radians(wave)));
+    int v2 = 50 + (int)(40.0 * sin(radians(wave + 120)));
+    int v3 = 50 + (int)(35.0 * sin(radians(wave + 240)));
 
-    int batteryLevel = 100 - demoPercent;
-    updateLinearGaugeValue(20, 224, 200, 20, batteryLevel, 0, 100, 0x38BDF8);
+    updateGauge(48, v1, COLOR_BLUE);
+    updateGauge(124, v2, COLOR_GREEN);
+    updateGauge(200, v3, COLOR_AMBER);
 
-    // Push updated components to display without any full-screen flicker
     k10.canvas->updateCanvas();
-
-    // Animate demo percentage value
-    demoPercent += step;
-    if (demoPercent >= 100 || demoPercent <= 0) {
-        step = -step;
-    }
-
-    delay(30);
+    delay(50);
 }

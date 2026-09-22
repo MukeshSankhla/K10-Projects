@@ -3,29 +3,44 @@
 UNIHIKER_K10 k10;
 uint8_t screen_dir = 2; // Portrait orientation (240x320)
 
-// Curated Aurora cosmic color palette
-const uint32_t auroraColors[] = {
-    0x00F0FF, // Electric Cyan
-    0x39FF14, // Neon Lime
-    0xFF007F, // Neon Pink
-    0xFFB800, // Star Gold
-    0xBD00FF, // Cosmic Violet
-    0x38BDF8  // Ice Blue
+// Clean Minimalist Light Theme Palette
+const uint32_t COLOR_BG        = 0xF8FAFC; // Soft Slate Off-White
+const uint32_t COLOR_CARD      = 0xFFFFFF; // Pure White Card Fill
+const uint32_t COLOR_SKY       = 0xF0F9FF; // Soft Sky Tint Fill
+const uint32_t COLOR_BORDER    = 0xE2E8F0; // Delicate 1px Border
+const uint32_t COLOR_BORDER_SKY= 0xBAE6FD; // Sky 1px Border
+const uint32_t COLOR_TEXT_PRI  = 0x0F172A; // Deep Slate Charcoal
+const uint32_t COLOR_TEXT_MUTED= 0x64748B; // Slate Muted Label
+const uint32_t COLOR_SAPPHIRE  = 0x2563EB; // Sapphire Brand Accent
+
+const uint32_t starColors[] = {
+    0x2563EB, // Sapphire
+    0x0284C7, // Sky Blue
+    0x7C3AED, // Violet
+    0x059669, // Emerald
+    0xD97706, // Amber
+    0xEA580C  // Tangerine
 };
-const int numColors = sizeof(auroraColors) / sizeof(auroraColors[0]);
+const int numColors = sizeof(starColors) / sizeof(starColors[0]);
 
-// Render static chrome (header, divider lines, footer status) once
 void initStaticUI() {
-    // 1. Cosmic Starlight Header Banner
-    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x0D0B24, 0x0D0B24, true);
-    k10.canvas->canvasLine(0, 42, 240, 42, 0x7209B7);
-    k10.canvas->canvasText("METEOR SHOWER", 44, 10, 0x38BDF8,
-                           k10.canvas->eCNAndENFont24, 15, false);
+    k10.canvas->canvasClear();
+    k10.canvas->canvasRectangle(0, 0, 240, 320, COLOR_BG, COLOR_BG, true);
 
-    // 2. Centered Footer Status (Zero-overflow)
-    k10.canvas->canvasLine(15, 276, 225, 276, 0x1E1538);
-    k10.canvas->canvasText("Cosmic Star Stream", 48, 290, 0x818CF8,
-                           k10.canvas->eCNAndENFont16, 22, false);
+    // App Header Bar (y: 0 to 40)
+    k10.canvas->canvasRectangle(0, 0, 240, 40, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 40, 240, 40, COLOR_BORDER);
+    k10.canvas->canvasText("Sky Animation", 14, 12, COLOR_TEXT_PRI, k10.canvas->eCNAndENFont16, 50, false);
+    // Sapphire brand dot
+    k10.canvas->canvasCircle(224, 20, 4, COLOR_SAPPHIRE, COLOR_SAPPHIRE, true);
+
+    // Sky Viewport Frame (y: 48 to 276)
+    k10.canvas->canvasRectangle(10, 48, 220, 228, COLOR_BORDER_SKY, COLOR_SKY, true);
+
+    // Footer Info Bar (y: 284 to 320)
+    k10.canvas->canvasRectangle(0, 284, 240, 36, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 284, 240, 284, COLOR_BORDER);
+    k10.canvas->canvasText("Dynamic Shooting Stars Animation", 14, 294, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
 
     k10.canvas->updateCanvas();
 }
@@ -34,42 +49,40 @@ void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
     k10.creatCanvas();
-    // Deep Cosmos background
-    k10.setScreenBackground(0x040514);
-
     k10.rgb->brightness(5);
-    k10.rgb->write(-1, 0xBD00FF); // Cosmic violet glow
+    k10.rgb->write(-1, 0x2563EB);
 
     initStaticUI();
 }
 
 void loop() {
-    // Dynamic Partial Refresh: clear ONLY the sky animation viewport (y=43..274)
-    k10.canvas->canvasRectangle(0, 43, 240, 232, 0x040514, 0x040514, true);
+    // Dynamic Partial Refresh: clear ONLY the sky animation viewport (x: 11..228, y: 49..274)
+    k10.canvas->canvasRectangle(11, 49, 218, 226, COLOR_SKY, COLOR_SKY, true);
 
-    // 1. Draw subtle background starfield points in viewport
-    for (int s = 0; s < 25; s++) {
-        int sx = (s * 47) % 230 + 5;
-        int sy = (s * 61) % 220 + 48;
-        k10.canvas->canvasPoint(sx, sy, 0x64748B);
+    // Draw subtle star points
+    for (int s = 0; s < 20; s++) {
+        int sx = (s * 47) % 210 + 15;
+        int sy = (s * 61) % 210 + 55;
+        k10.canvas->canvasPoint(sx, sy, 0x94A3B8);
     }
 
-    // 2. Draw bounded dynamic meteor streaks
-    k10.canvas->canvasSetLineWidth(2);
-    for (int i = 0; i < 12; i++) {
-        int startX = random(10, 200);
-        int startY = random(46, 210);
-        int length = random(15, 45);
-        int endX = min(230, startX + length);
-        int endY = min(270, startY + length);
+    // Draw delicate 1px shooting star streaks
+    k10.canvas->canvasSetLineWidth(1);
+    for (int i = 0; i < 10; i++) {
+        int startX = random(18, 190);
+        int startY = random(55, 230);
+        int length = random(15, 36);
+        uint32_t color = starColors[random(0, numColors)];
 
-        uint32_t color = auroraColors[random(0, numColors)];
-        k10.canvas->canvasLine(startX, startY, endX, endY, color);
-        // Bright meteor head spark
-        k10.canvas->canvasPoint(endX, endY, 0xFFFFFF);
+        int endX = startX + length;
+        int endY = startY + (length * 3 / 4);
+
+        if (endX < 224 && endY < 270) {
+            k10.canvas->canvasLine(startX, startY, endX, endY, color);
+            k10.canvas->canvasPoint(endX, endY, 0x0F172A);
+        }
     }
 
-    // Push canvas elements to screen (header and footer remain intact without flicker)
     k10.canvas->updateCanvas();
-    delay(120);
+    delay(70);
 }

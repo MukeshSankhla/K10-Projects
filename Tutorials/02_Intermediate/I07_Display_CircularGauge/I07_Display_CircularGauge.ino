@@ -6,113 +6,110 @@ uint8_t screen_dir = 2; // Portrait orientation (240x320)
 const float START_ANGLE = 150.0 * (PI / 180.0);
 const float SWEEP_ANGLE = 240.0 * (PI / 180.0);
 
-// 1. Draw static dial chrome (bezel rings, face background, tick scale, unit) once
+// Clean Minimalist Light Theme Palette
+const uint32_t COLOR_BG        = 0xF8FAFC; // Soft Slate Off-White
+const uint32_t COLOR_CARD      = 0xFFFFFF; // Pure White Card Fill
+const uint32_t COLOR_BORDER    = 0xE2E8F0; // Delicate 1px Border
+const uint32_t COLOR_BORDER_DIAL=0xCBD5E1; // Subtle Dial 1px Border
+const uint32_t COLOR_TEXT_PRI  = 0x0F172A; // Deep Slate Charcoal
+const uint32_t COLOR_TEXT_MUTED= 0x64748B; // Slate Muted Label
+const uint32_t COLOR_BLUE      = 0x2563EB; // Sapphire Brand Accent
+const uint32_t COLOR_CORAL     = 0xE11D48; // Needle Rose / Coral
+const uint32_t COLOR_WHITE     = 0xFFFFFF;
+
 void drawCircularGaugeStaticChrome(int centerX, int centerY, int radius, const char* unit) {
-    // Outer dial bezel ring (Supercar aluminum trim)
-    k10.canvas->canvasCircle(centerX, centerY, radius + 8, 0x475569, 0x000000, false);
-    k10.canvas->canvasCircle(centerX, centerY, radius + 7, 0x1E293B, 0x000000, false);
+    // Outer dial bezel (delicate 1px circle)
+    k10.canvas->canvasCircle(centerX, centerY, radius + 2, COLOR_BORDER_DIAL, COLOR_CARD, true);
 
-    // Dial face background
-    k10.canvas->canvasCircle(centerX, centerY, radius, 0x1E293B, 0x111317, true);
-
-    // Draw tick marks around 240-degree arc (from 150 deg to 390 deg)
+    // Draw tick marks around 240-degree arc
     for (int t = 0; t <= 12; t++) {
         float theta = START_ANGLE + (t * SWEEP_ANGLE / 12.0);
-        int x1 = centerX + (int)(cos(theta) * (radius - 4));
-        int y1 = centerY + (int)(sin(theta) * (radius - 4));
-        int x2 = centerX + (int)(cos(theta) * (radius - 12));
-        int y2 = centerY + (int)(sin(theta) * (radius - 12));
+        int x1 = centerX + (int)(cos(theta) * (radius - 2));
+        int y1 = centerY + (int)(sin(theta) * (radius - 2));
+        int x2 = centerX + (int)(cos(theta) * (radius - 8));
+        int y2 = centerY + (int)(sin(theta) * (radius - 8));
 
-        uint32_t tickColor = (t >= 10) ? 0xEF4444 : 0x94A3B8;
+        uint32_t tickColor = (t >= 10) ? 0xDC2626 : 0x94A3B8;
         k10.canvas->canvasLine(x1, y1, x2, y2, tickColor);
     }
 
     // Static Unit Label below dial center
     int unitX = centerX - (int)(strlen(unit) * 4);
-    k10.canvas->canvasText(unit, unitX, centerY + 50, 0xFACC15,
-                           k10.canvas->eCNAndENFont16, 10, false);
+    k10.canvas->canvasText(unit, unitX, centerY + 46, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 10, false);
 }
 
-// 2. Dynamic Partial Refresh: update ONLY inner dial face, needle, pivot cap, and digital readout
-void updateCircularGaugeNeedle(int centerX, int centerY, int radius, int value, int minVal, int maxVal, uint32_t activeColor) {
-    // Clear inner dial face (radius - 14) without touching ticks (at radius - 12) or outer bezel
-    k10.canvas->canvasCircle(centerX, centerY, radius - 14, 0x111317, 0x111317, true);
-
-    // Clear digital readout text region
-    k10.canvas->canvasRectangle(centerX - 30, centerY + 22, 60, 24, 0x111317, 0x111317, true);
+void updateCircularGaugeNeedle(int centerX, int centerY, int radius, int value, int minVal, int maxVal) {
+    // Clear inner dial face (radius - 10) with pure white card background
+    k10.canvas->canvasCircle(centerX, centerY, radius - 10, COLOR_CARD, COLOR_CARD, true);
 
     // Calculate indicator needle vector
     int constrainedVal = constrain(value, minVal, maxVal);
     float normVal = (float)(constrainedVal - minVal) / (float)(maxVal - minVal);
     float needleAngle = START_ANGLE + (normVal * SWEEP_ANGLE);
 
-    int needleX = centerX + (int)(cos(needleAngle) * (radius - 16));
-    int needleY = centerY + (int)(sin(needleAngle) * (radius - 16));
+    int needleX = centerX + (int)(cos(needleAngle) * (radius - 14));
+    int needleY = centerY + (int)(sin(needleAngle) * (radius - 14));
 
-    // Needle vector lines
-    k10.canvas->canvasLine(centerX, centerY, needleX, needleY, activeColor);
-    k10.canvas->canvasLine(centerX + 1, centerY, needleX, needleY, activeColor);
-    k10.canvas->canvasLine(centerX, centerY + 1, needleX, needleY, activeColor);
+    // Needle vector line
+    k10.canvas->canvasLine(centerX, centerY, needleX, needleY, COLOR_CORAL);
+    k10.canvas->canvasLine(centerX + 1, centerY, needleX, needleY, COLOR_CORAL);
 
     // Center pivot cap
-    k10.canvas->canvasCircle(centerX, centerY, 8, 0xFACC15, 0xFACC15, true);
-    k10.canvas->canvasCircle(centerX, centerY, 4, 0x000000, 0x000000, true);
+    k10.canvas->canvasCircle(centerX, centerY, 6, COLOR_TEXT_PRI, COLOR_TEXT_PRI, true);
+    k10.canvas->canvasCircle(centerX, centerY, 3, COLOR_CARD, COLOR_CARD, true);
 
-    // Digital Readout below pivot
-    String valStr = String(value);
-    int textX = centerX - (int)(valStr.length() * 7);
-    k10.canvas->canvasText(valStr, textX, centerY + 24, 0xF8FAFC,
-                           k10.canvas->eCNAndENFont24, 8, false);
+    // Digital readout text
+    String valStr = String(constrainedVal);
+    int textX = centerX - (int)(valStr.length() * 8);
+    k10.canvas->canvasText(valStr, textX, centerY + 22, COLOR_TEXT_PRI, k10.canvas->eCNAndENFont24, 6, false);
 }
 
-// Render static screen layout (Header banner and footer telemetry) once
 void drawScreenChrome() {
-    // 1. Cockpit Header Banner
-    k10.canvas->canvasRectangle(0, 0, 240, 42, 0x181A20, 0x181A20, true);
-    k10.canvas->canvasLine(0, 42, 240, 42, 0xEF4444); // Racing red line
-    k10.canvas->canvasText("SPEEDOMETER", 46, 10, 0xF8FAFC,
-                           k10.canvas->eCNAndENFont24, 15, false);
+    k10.canvas->canvasClear();
+    k10.canvas->canvasRectangle(0, 0, 240, 320, COLOR_BG, COLOR_BG, true);
 
-    // 2. Dial Gauge Static Scale and Trim
-    drawCircularGaugeStaticChrome(120, 155, 72, "KM / H");
+    // App Header Bar (y: 0 to 40)
+    k10.canvas->canvasRectangle(0, 0, 240, 40, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 40, 240, 40, COLOR_BORDER);
+    k10.canvas->canvasText("Circular Gauge", 14, 12, COLOR_TEXT_PRI, k10.canvas->eCNAndENFont16, 50, false);
+    // Blue brand dot
+    k10.canvas->canvasCircle(224, 20, 4, COLOR_BLUE, COLOR_BLUE, true);
 
-    // 3. Centered Cockpit Footer (Zero-overflow)
-    k10.canvas->canvasLine(15, 276, 225, 276, 0x27272A);
-    k10.canvas->canvasText("Cockpit Velocity Dial", 36, 290, 0x94A3B8,
-                           k10.canvas->eCNAndENFont16, 24, false);
+    // Card Container (y: 48 to 278)
+    k10.canvas->canvasRectangle(10, 48, 220, 230, COLOR_BORDER, COLOR_CARD, true);
+
+    // Static Gauge Bezel & Scale
+    drawCircularGaugeStaticChrome(120, 160, 80, "KM / H");
+
+    // Footer Bar (y: 284 to 320)
+    k10.canvas->canvasRectangle(0, 284, 240, 36, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 284, 240, 284, COLOR_BORDER);
+    k10.canvas->canvasText("High-Precision Analog Watch Dial", 14, 294, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
 }
-
-int gaugeVal = 20;
-int gaugeSpeed = 2;
 
 void setup() {
     k10.begin();
     k10.initScreen(screen_dir);
     k10.creatCanvas();
-    // Supercar Cockpit Dark Carbon background
-    k10.setScreenBackground(0x0C0D10);
+    k10.setScreenBackground(COLOR_BG);
 
     k10.rgb->brightness(5);
-    k10.rgb->write(-1, 0xEF4444);
+    k10.rgb->write(-1, 0x2563EB);
 
-    // Initial paint: static chrome + initial needle state
     drawScreenChrome();
-    updateCircularGaugeNeedle(120, 155, 72, gaugeVal, 0, 100, 0x00E5FF);
     k10.canvas->updateCanvas();
 }
 
 void loop() {
-    // Dynamic Partial Refresh: update ONLY the needle, pivot, and digital readout
-    uint32_t needleColor = (gaugeVal > 80) ? 0xEF4444 : ((gaugeVal > 50) ? 0xFACC15 : 0x00E5FF);
-    updateCircularGaugeNeedle(120, 155, 72, gaugeVal, 0, 100, needleColor);
+    static int speed = 0;
+    static int dir = 1;
 
-    // Push updated canvas without any screen flicker
+    speed += dir * 2;
+    if (speed >= 180) { speed = 180; dir = -1; }
+    if (speed <= 0)   { speed = 0;   dir = 1; }
+
+    updateCircularGaugeNeedle(120, 160, 80, speed, 0, 180);
+
     k10.canvas->updateCanvas();
-
-    gaugeVal += gaugeSpeed;
-    if (gaugeVal >= 100 || gaugeVal <= 0) {
-        gaugeSpeed = -gaugeSpeed;
-    }
-
-    delay(30);
+    delay(40);
 }
