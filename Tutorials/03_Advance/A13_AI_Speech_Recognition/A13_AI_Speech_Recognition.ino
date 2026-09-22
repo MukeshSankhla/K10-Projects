@@ -1,9 +1,9 @@
-#include "unihiker_k10.h"
 #include "asr.h"
+#include "unihiker_k10.h"
 
 UNIHIKER_K10 k10;
-uint8_t screen_dir = 2; // Portrait (240x320)
 ASR asr;
+uint8_t screen_dir = 2; // Portrait (240x320)
 
 // Clean Minimalist Light Theme Palette
 const uint32_t COLOR_BG        = 0xF8FAFC; // Soft Slate Off-White
@@ -21,10 +21,12 @@ const uint32_t COLOR_WHITE     = 0xFFFFFF;
 bool lastWakeState = false;
 bool lightIsOn = false;
 unsigned long lastEqTick = 0;
+int eqPhase = 0;
 
 void drawStaticChrome() {
     k10.canvas->canvasClear();
-    k10.canvas->canvasRectangle(0, 0, 240, 320, COLOR_BG, COLOR_BG, true);
+    k10.canvas->canvasSetLineWidth(1);
+    k10.setScreenBackground(COLOR_BG);
 
     // App Header Bar (y: 0 to 40)
     k10.canvas->canvasRectangle(0, 0, 240, 40, COLOR_CARD, COLOR_CARD, true);
@@ -33,74 +35,65 @@ void drawStaticChrome() {
     // Violet brand dot
     k10.canvas->canvasCircle(224, 20, 4, COLOR_VIOLET, COLOR_VIOLET, true);
 
-    // Wake Word Card (y: 48 to 112)
-    k10.canvas->canvasRectangle(10, 48, 220, 64, COLOR_BORDER, COLOR_CARD, true);
-    k10.canvas->canvasText("WAKE PHRASE", 20, 56, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
-    k10.canvas->canvasText("\"Hi, Telly\"", 20, 74, COLOR_VIOLET, k10.canvas->eCNAndENFont16, 50, false);
+    // Wake Phrase Card (y: 46 to 110)
+    k10.canvas->canvasRectangle(10, 46, 220, 64, COLOR_BORDER, COLOR_CARD, true);
+    k10.canvas->canvasText("WAKE PHRASE", 20, 54, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
+    k10.canvas->canvasText("\"Hi Telly\" / \"Jarvis\"", 20, 74, COLOR_VIOLET, k10.canvas->eCNAndENFont16, 50, false);
 
-    // Audio Visualizer Card (y: 120 to 192)
-    k10.canvas->canvasRectangle(10, 120, 220, 72, COLOR_BORDER, COLOR_CARD, true);
-    k10.canvas->canvasText("AUDIO SPECTRUM", 20, 128, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
+    // Audio Visualizer Card (y: 116 to 192)
+    k10.canvas->canvasRectangle(10, 116, 220, 76, COLOR_BORDER, COLOR_CARD, true);
+    k10.canvas->canvasText("AUDIO SPECTRUM", 20, 124, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
 
-    // Voice Command Card (y: 200 to 280)
-    k10.canvas->canvasRectangle(10, 200, 220, 80, COLOR_BORDER, COLOR_CARD, true);
-    k10.canvas->canvasText("VOICE COMMANDS", 20, 208, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
-    k10.canvas->canvasText("Say: \"Light on\" / \"Light off\"", 20, 226, COLOR_TEXT_SEC, k10.canvas->eCNAndENFont16, 50, false);
+    // Voice Command Card (y: 198 to 280)
+    k10.canvas->canvasRectangle(10, 198, 220, 82, COLOR_BORDER, COLOR_CARD, true);
+    k10.canvas->canvasText("VOICE COMMANDS", 20, 206, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
+    k10.canvas->canvasText("Say: \"Switch on\" / \"Switch off\"", 20, 224, COLOR_TEXT_SEC, k10.canvas->eCNAndENFont16, 50, false);
 
-    // Footer Info Bar (y: 288 to 320)
-    k10.canvas->canvasRectangle(0, 288, 240, 32, COLOR_CARD, COLOR_CARD, true);
-    k10.canvas->canvasLine(0, 288, 240, 288, COLOR_BORDER);
-    k10.canvas->canvasText("Offline Neural ASR Engine", 14, 296, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
-
-    k10.canvas->updateCanvas();
-}
-
-void drawBootStatus(const char* msg) {
-    k10.canvas->canvasRectangle(110, 72, 114, 24, COLOR_CARD, COLOR_CARD, true);
-    k10.canvas->canvasText(msg, 114, 76, COLOR_VIOLET, k10.canvas->eCNAndENFont16, 50, false);
-    k10.canvas->updateCanvas();
-}
-
-void drawModelMissingAlert() {
-    k10.canvas->canvasRectangle(10, 48, 220, 232, 0xFEE2E2, COLOR_CARD, true);
-    k10.canvas->canvasRectangle(20, 58, 200, 24, COLOR_RED, COLOR_RED, true);
-    k10.canvas->canvasText("MODEL INIT TIMEOUT", 36, 62, COLOR_WHITE, k10.canvas->eCNAndENFont16, 50, false);
-
-    k10.canvas->canvasText("Speech Model partition", 20, 96, COLOR_RED, k10.canvas->eCNAndENFont16, 50, false);
-    k10.canvas->canvasText("at 0x510000 missing!", 20, 116, COLOR_RED, k10.canvas->eCNAndENFont16, 50, false);
-
-    k10.canvas->canvasText("To fix:", 20, 146, COLOR_TEXT_PRI, k10.canvas->eCNAndENFont16, 50, false);
-    k10.canvas->canvasText("1. Flash A13 merged bin", 20, 168, COLOR_VIOLET, k10.canvas->eCNAndENFont16, 50, false);
-    k10.canvas->canvasText("2. Or in Arduino IDE:", 20, 192, COLOR_TEXT_SEC, k10.canvas->eCNAndENFont16, 50, false);
-    k10.canvas->canvasText("   Tools -> Model -> EN", 20, 212, COLOR_TEXT_SEC, k10.canvas->eCNAndENFont16, 50, false);
+    // Footer Info Bar (y: 286 to 320)
+    k10.canvas->canvasRectangle(0, 286, 240, 34, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasLine(0, 286, 240, 286, COLOR_BORDER);
+    k10.canvas->canvasText("Offline Neural ASR Engine", 14, 294, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
 
     k10.canvas->updateCanvas();
 }
 
 // Partial refresh for wake state pill
 void updateWakeState(bool awake) {
-    k10.canvas->canvasRectangle(110, 70, 114, 26, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasRectangle(114, 68, 110, 28, COLOR_CARD, COLOR_CARD, true);
 
     if (awake) {
-        k10.canvas->canvasRectangle(118, 72, 94, 20, COLOR_GREEN, COLOR_GREEN, true);
-        k10.canvas->canvasText("LISTENING...", 124, 74, COLOR_WHITE, k10.canvas->eCNAndENFont16, 50, false);
+        k10.canvas->canvasRectangle(120, 70, 96, 22, COLOR_GREEN, COLOR_GREEN, true);
+        k10.canvas->canvasText("LISTENING...", 126, 73, COLOR_WHITE, k10.canvas->eCNAndENFont16, 50, false);
     } else {
-        k10.canvas->canvasRectangle(128, 72, 84, 20, COLOR_BORDER, COLOR_CONSOLE, true);
-        k10.canvas->canvasText("STANDBY", 136, 74, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
+        k10.canvas->canvasRectangle(130, 70, 84, 22, COLOR_BORDER, COLOR_CONSOLE, true);
+        k10.canvas->canvasText("STANDBY", 140, 73, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
     }
 
     k10.canvas->updateCanvas();
 }
 
-// Partial refresh for equalizer spectrum bars
+// Partial refresh for equalizer spectrum bars (always lively and animated)
 void updateEqualizer(bool active) {
-    k10.canvas->canvasRectangle(20, 148, 200, 36, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasRectangle(18, 142, 204, 44, COLOR_CARD, COLOR_CARD, true);
 
+    eqPhase++;
     for (int i = 0; i < 9; i++) {
-        int barH = active ? random(6, 28) : 4;
+        int barH;
+        if (active) {
+            // High dynamic speech visualizer when awake
+            barH = 10 + (int)(sin((eqPhase * 0.4) + (i * 0.7)) * 12.0) + random(0, 10);
+            if (barH < 6) barH = 6;
+            if (barH > 36) barH = 36;
+        } else {
+            // Ambient resting audio wave to show microphone is actively listening
+            barH = 6 + (int)(sin((eqPhase * 0.2) + (i * 0.6)) * 4.0);
+            if (barH < 3) barH = 3;
+            if (barH > 14) barH = 14;
+        }
+
         int barX = 24 + (i * 22);
-        int barY = 180 - barH;
-        uint32_t barColor = active ? COLOR_VIOLET : COLOR_BORDER;
+        int barY = 182 - barH;
+        uint32_t barColor = active ? COLOR_VIOLET : 0xA5B4FC; // Soft indigo in standby, vibrant violet when active
         k10.canvas->canvasRectangle(barX, barY, 12, barH, barColor, barColor, true);
     }
     k10.canvas->updateCanvas();
@@ -108,14 +101,14 @@ void updateEqualizer(bool active) {
 
 // Partial refresh for light command state
 void updateLightState(bool on) {
-    k10.canvas->canvasRectangle(20, 248, 200, 26, COLOR_CARD, COLOR_CARD, true);
+    k10.canvas->canvasRectangle(18, 246, 204, 28, COLOR_CARD, COLOR_CARD, true);
 
     if (on) {
-        k10.canvas->canvasRectangle(20, 250, 180, 22, COLOR_RED, COLOR_RED, true);
-        k10.canvas->canvasText("LIGHT STATE: ON (RED)", 28, 253, COLOR_WHITE, k10.canvas->eCNAndENFont16, 50, false);
+        k10.canvas->canvasRectangle(20, 248, 180, 22, COLOR_GREEN, COLOR_GREEN, true);
+        k10.canvas->canvasText("LIGHT: ON (WHITE)", 38, 251, COLOR_WHITE, k10.canvas->eCNAndENFont16, 50, false);
     } else {
-        k10.canvas->canvasRectangle(20, 250, 180, 22, COLOR_BORDER, COLOR_CONSOLE, true);
-        k10.canvas->canvasText("LIGHT STATE: OFF", 48, 253, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
+        k10.canvas->canvasRectangle(20, 248, 180, 22, COLOR_BORDER, COLOR_CONSOLE, true);
+        k10.canvas->canvasText("LIGHT: OFF", 66, 251, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
     }
 
     k10.canvas->updateCanvas();
@@ -123,40 +116,28 @@ void updateLightState(bool on) {
 
 void setup() {
     Serial.begin(115200);
+
+    // 1. Initialize hardware
     k10.begin();
 
-    k10.initScreen(screen_dir);
-    k10.creatCanvas();
-    drawStaticChrome();
-    drawBootStatus("Loading model...");
-
+    // 2. Initialize Neural Speech Recognition BEFORE screen canvas to ensure clean DMA buffer allocation
     asr.asrInit(CONTINUOUS, EN_MODE, 6000);
-
-    unsigned long startInit = millis();
-    bool initOk = true;
     while (asr._asrState == 0) {
         delay(100);
-        if (millis() - startInit > 7000) {
-            initOk = false;
-            break;
-        }
     }
 
-    if (!initOk) {
-        drawModelMissingAlert();
-        while (1) {
-            delay(1000);
-        }
-    }
+    // 3. Initialize screen and canvas
+    k10.initScreen(screen_dir);
+    k10.creatCanvas();
 
-    asr.addASRCommand(1, "Switch on");
-    asr.addASRCommand(1, "light on");
-    asr.addASRCommand(1, "lights on");
+    // 4. Configure trained English commands
+    asr.addASRCommand(0 + 1, "Switch on");
+    asr.addASRCommand(1 + 1, "Switch off");
 
-    asr.addASRCommand(2, "Switch off");
-    asr.addASRCommand(2, "light off");
-    asr.addASRCommand(2, "lights off");
+    k10.rgb->brightness(5);
+    k10.rgb->write(-1, 0x000000);
 
+    drawStaticChrome();
     updateWakeState(false);
     updateEqualizer(false);
     updateLightState(false);
@@ -167,23 +148,33 @@ void loop() {
     if (awake != lastWakeState) {
         lastWakeState = awake;
         updateWakeState(awake);
+
+        if (awake) {
+            k10.rgb->write(-1, 0x00FFFF); // Cyan glow when awake and listening
+        } else {
+            if (!lightIsOn) {
+                k10.rgb->write(-1, 0x000000);
+            }
+        }
     }
 
+    // Animated spectrum visualizer tick every 80ms
     unsigned long now = millis();
-    if (now - lastEqTick >= 100) {
+    if (now - lastEqTick >= 80) {
         lastEqTick = now;
         updateEqualizer(awake);
     }
 
-    if (asr.isDetectCmdID(1)) {
+    // Command recognition evaluation
+    if (asr.isDetectCmdID(0 + 1)) {
         lightIsOn = true;
         k10.rgb->brightness(9);
-        k10.rgb->write(-1, 0xFF0000);
+        k10.rgb->write(-1, 0xFFFFFF); // Bright white light
         updateLightState(true);
-    } else if (asr.isDetectCmdID(2)) {
+    } else if (asr.isDetectCmdID(1 + 1)) {
         lightIsOn = false;
         k10.rgb->brightness(0);
-        k10.rgb->write(-1, 0x000000);
+        k10.rgb->write(-1, 0x000000); // Light off
         updateLightState(false);
     }
 
