@@ -16,6 +16,7 @@ const uint32_t COLOR_TEXT_SEC  = 0x334155; // Slate Secondary
 const uint32_t COLOR_TEXT_MUTED= 0x64748B; // Slate Muted Label
 const uint32_t COLOR_COBALT    = 0x1D4ED8; // Clean Cobalt Blue
 const uint32_t COLOR_GREEN     = 0x16A34A; // Success Green
+const uint32_t COLOR_RED       = 0xDC2626; // Alert Red
 const uint32_t COLOR_WHITE     = 0xFFFFFF;
 
 void drawStaticChrome() {
@@ -42,7 +43,12 @@ void updateRecognitionCard(const String& id, const String& statusMsg, uint32_t s
     k10.canvas->canvasText(statusMsg, 20, 242, statusColor, k10.canvas->eCNAndENFont16, 50, false);
 
     if (id.length() > 0) {
-        String idStr = "ID: " + id;
+        String idStr;
+        if (id == "-1" || id.toInt() < 0) {
+            idStr = "ID: Unknown";
+        } else {
+            idStr = "ID: " + id;
+        }
         k10.canvas->canvasText(idStr, 20, 262, COLOR_TEXT_PRI, k10.canvas->eCNAndENFont16, 50, false);
     } else {
         k10.canvas->canvasText("Press [B] to Scan", 20, 262, COLOR_TEXT_MUTED, k10.canvas->eCNAndENFont16, 50, false);
@@ -86,8 +92,13 @@ void setup() {
 void loop() {
     if (ai.isRecognized()) {
         recognizedID = ai.getRecognitionID();
-        updateRecognitionCard(recognizedID, "Face Verified", COLOR_GREEN);
-        k10.rgb->write(-1, 0x16A34A);
+        if (recognizedID == "-1" || recognizedID.toInt() < 0) {
+            updateRecognitionCard(recognizedID, "Unknown Face", COLOR_RED);
+            k10.rgb->write(-1, 0xDC2626); // Red LED alert for unrecognized face
+        } else {
+            updateRecognitionCard(recognizedID, "Face Verified", COLOR_GREEN);
+            k10.rgb->write(-1, 0x16A34A); // Green LED for enrolled face
+        }
     }
     delay(40);
 }
