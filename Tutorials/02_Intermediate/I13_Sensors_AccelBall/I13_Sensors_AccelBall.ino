@@ -95,7 +95,7 @@ void loop() {
     float ay = k10.getAccelerometerY() / 1000.0;
 
     velX += ax * 1.8;
-    velY -= ay * 1.8;
+    velY += ay * 1.8;
 
     velX *= FRICTION;
     velY *= FRICTION;
