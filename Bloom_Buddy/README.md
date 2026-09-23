@@ -1,9 +1,9 @@
 # 🌱 Bloom Buddy - Your Smart Plant Companion
 
 <div align="center">
-  <img src="https://github.com/MukeshSankhla/Bloom-Buddy/blob/main/images/Cover.gif" alt="Bloom Buddy Device">
-  <img src="https://github.com/MukeshSankhla/Bloom-Buddy/blob/main/images/DSC01019.JPG" alt="Bloom Buddy Device">
-  <img src="https://github.com/MukeshSankhla/Bloom-Buddy/blob/main/images/S1.png" alt="Bloom Buddy Device">
+  <img src="https://raw.githubusercontent.com/MukeshSankhla/Bloom-Buddy/main/images/Cover.gif" alt="Bloom Buddy Device">
+  <img src="https://raw.githubusercontent.com/MukeshSankhla/Bloom-Buddy/main/images/DSC01019.JPG" alt="Bloom Buddy Device">
+  <img src="https://raw.githubusercontent.com/MukeshSankhla/Bloom-Buddy/main/images/S1.png" alt="Bloom Buddy Device">
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Platform](https://img.shields.io/badge/Platform-ESP32-blue.svg)](https://www.espressif.com/en/products/socs/esp32)
@@ -136,11 +136,11 @@ const int MOISTURE_DRY_VALUE = 3046;   // Dry soil reading
 
 | State | Animation | Description |
 |-------|-----------|-------------|
-| 😊 Happy | ![Happy](https://github.com/MukeshSankhla/Bloom-Buddy/blob/main/Gifs/12.gif?text=😊) | Plant is well-watered and content |
-| 😢 Sad | ![Sad](https://github.com/MukeshSankhla/Bloom-Buddy/blob/main/Gifs/10.gif?text=😢) | Plant needs water |
-| 😴 Sleep | ![Sleep](https://github.com/MukeshSankhla/Bloom-Buddy/blob/main/Gifs/17.gif?text=😴) | Nighttime rest mode |
-| 🥶 Cold | ![Cold](https://github.com/MukeshSankhla/Bloom-Buddy/blob/main/Gifs/7.gif?text=🥶) | Temperature too low |
-| 🥵 Hot | ![Hot](https://github.com/MukeshSankhla/Bloom-Buddy/blob/main/Gifs/5.gif?text=🥵) | Temperature too high |
+| 😊 Happy | ![Happy](https://raw.githubusercontent.com/MukeshSankhla/Bloom-Buddy/main/Gifs/12.gif) | Plant is well-watered and content |
+| 😢 Sad | ![Sad](https://raw.githubusercontent.com/MukeshSankhla/Bloom-Buddy/main/Gifs/10.gif) | Plant needs water |
+| 😴 Sleep | ![Sleep](https://raw.githubusercontent.com/MukeshSankhla/Bloom-Buddy/main/Gifs/17.gif) | Nighttime rest mode |
+| 🥶 Cold | ![Cold](https://raw.githubusercontent.com/MukeshSankhla/Bloom-Buddy/main/Gifs/7.gif) | Temperature too low |
+| 🥵 Hot | ![Hot](https://raw.githubusercontent.com/MukeshSankhla/Bloom-Buddy/main/Gifs/5.gif) | Temperature too high |
 
 ## 📄 License
 
