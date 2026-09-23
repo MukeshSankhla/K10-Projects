@@ -5,11 +5,12 @@ This tutorial introduces the **2.8-inch color TFT display** of the UNIHIKER K10 
 You will learn how to initialize the display controller, set portrait orientation, allocate a graphics canvas buffer in RAM, and flood the display panel with solid 24-bit background color washes.
 
 ### Expected Behavior
-The display cycles sequentially through 4 solid background colors every 1.5 seconds:
-1. **Teal** (`#008080`)
-2. **Amber** (`#FFBF00`)
-3. **Purple** (`#800080`)
-4. **Navy** (`#000080`)
+The display cycles sequentially through 5 solid background colors every 2 seconds:
+1. **White** (`#FFFFFF`)
+2. **Red** (`#FF0000`)
+3. **Green** (`#00FF00`)
+4. **Blue** (`#0000FF`)
+5. **Black** (`#000000`)
 
 ---
 
@@ -71,39 +72,39 @@ A **TFT LCD (Thin-Film Transistor Liquid Crystal Display)** is an active-matrix 
 #include "unihiker_k10.h"
 
 UNIHIKER_K10 k10;
+uint8_t screen_dir = 2;
 ```
-- Loads board drivers and creates board manager `k10`.
+- Loads board drivers, creates board manager `k10`, and sets the orientation parameter `screen_dir = 2` (portrait).
 
 ### 2. Display Hardware Initialization in `setup()`
 ```cpp
 void setup() {
     k10.begin();
-    k10.initScreen(2); // Portrait orientation
+    k10.initScreen(screen_dir);
     k10.creatCanvas();
 }
 ```
 - `k10.begin()`: Initializes system power and SPI display clocks.
-- `k10.initScreen(2)`: Configures the ST7789 controller in Portrait mode ($240 \times 320$).
+- `k10.initScreen(screen_dir)`: Configures the ST7789 controller in Portrait mode ($240 \times 320$).
 - `k10.creatCanvas()`: Instantiates the 2D graphics canvas drawing buffer in ESP32-S3 RAM.
 
 ### 3. Background Color Cycling in `loop()`
 ```cpp
 void loop() {
-    k10.setScreenBackground(0x008080); // Teal
-    delay(1500);
-
-    k10.setScreenBackground(0xFFBF00); // Amber
-    delay(1500);
-
-    k10.setScreenBackground(0x800080); // Purple
-    delay(1500);
-
-    k10.setScreenBackground(0x000080); // Navy
-    delay(1500);
+    k10.setScreenBackground(0xFFFFFF); // White
+    delay(2000);
+    k10.setScreenBackground(0xFF0000); // Red
+    delay(2000);
+    k10.setScreenBackground(0x00FF00); // Green
+    delay(2000);
+    k10.setScreenBackground(0x0000FF); // Blue
+    delay(2000);
+    k10.setScreenBackground(0x000000); // Black
+    delay(2000);
 }
 ```
 - Each call to `k10.setScreenBackground(color)` repaints the entire screen area with a rich 24-bit color.
-- `delay(1500)` maintains each color wash for 1.5 seconds.
+- `delay(2000)` maintains each color wash for 2 seconds.
 
 ---
 
@@ -125,25 +126,24 @@ void loop() {
 #include "unihiker_k10.h"
 
 UNIHIKER_K10 k10;
+uint8_t screen_dir = 2;
 
 void setup() {
     k10.begin();
-    k10.initScreen(2); // Portrait orientation (240x320)
+    k10.initScreen(screen_dir);
     k10.creatCanvas();
 }
 
 void loop() {
-    // Cycle through 4 solid background colors every 1.5 seconds
-    k10.setScreenBackground(0x008080); // Teal
-    delay(1500);
-
-    k10.setScreenBackground(0xFFBF00); // Amber
-    delay(1500);
-
-    k10.setScreenBackground(0x800080); // Purple
-    delay(1500);
-
-    k10.setScreenBackground(0x000080); // Navy
-    delay(1500);
+    k10.setScreenBackground(0xFFFFFF);
+    delay(2000);
+    k10.setScreenBackground(0xFF0000);
+    delay(2000);
+    k10.setScreenBackground(0x00FF00);
+    delay(2000);
+    k10.setScreenBackground(0x0000FF);
+    delay(2000);
+    k10.setScreenBackground(0x000000);
+    delay(2000);
 }
 ```
